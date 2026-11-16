@@ -1,3 +1,28 @@
+## 4.2.0
+
+The Android package is renamed to `com.google.ai.edge.flutter_litert`, to
+match LiteRT's `com.google.ai.edge.litert`. The Dart API is unchanged.
+
+### Android
+
+* The plugin's Android namespace, Gradle group and Java/Kotlin package move
+  from `com.hugocornellier.flutter_litert` to
+  `com.google.ai.edge.flutter_litert`. The plugin class is still
+  `FlutterLitertPlugin`, and the JNI entry points of the Play services
+  runtime shim are renamed with it; the shim is compiled from source in the
+  app build, so nothing prebuilt goes stale.
+* Most apps only bump the version: Flutter regenerates
+  `GeneratedPluginRegistrant` with the new package on the next build.
+* Apps that name the old package themselves must update those references:
+  their own ProGuard/R8 keep rules for `com.hugocornellier.flutter_litert`,
+  add-to-app hosts that register `FlutterLitertPlugin` by hand, a
+  `GeneratedPluginRegistrant` checked into source control, and code that
+  calls the plugin's Java or Kotlin classes directly.
+
+### iOS and macOS
+
+* The podspecs name the project, not a person, as the author.
+
 ## 4.1.2
 
 The repository moved to
