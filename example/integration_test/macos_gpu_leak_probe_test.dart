@@ -30,10 +30,10 @@ import 'package:flutter_litert/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-const _repositoriesRoot = String.fromEnvironment(
-  'MODEL_REPOS_ROOT',
-  defaultValue: '/Users/hugocornellier/IdeaProjects',
-);
+// Directory holding the detection package checkouts (animal_detection,
+// face_detection_tflite, ...). Pass it with
+// --dart-define=MODEL_REPOS_ROOT=<dir>; the tests skip when it is unset.
+const _repositoriesRoot = String.fromEnvironment('MODEL_REPOS_ROOT');
 
 const _targetCompiles = int.fromEnvironment(
   'LEAK_PROBE_COMPILES',
@@ -67,6 +67,10 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('repeated strict-GPU compilation does not degrade', (_) async {
+    if (_repositoriesRoot.isEmpty) {
+      markTestSkipped('Pass --dart-define=MODEL_REPOS_ROOT=<dir> to run');
+      return;
+    }
     expect(Platform.isMacOS, isTrue, reason: 'Metal comparison is macOS-only.');
 
     var compiles = 0;

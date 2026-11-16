@@ -8,9 +8,9 @@ name: Build TFLiteFlex iOS xcframework
 #   flutter_litert_flex podspec downloads, dedups and -force_loads.
 # - TensorFlowLiteFlex-spm.xcframework.zip: static-library xcframework
 #   (libTensorFlowLiteFlex.a per slice) for flutter_litert_flex's
-#   Package.swift. Made from the first with flutter_litert_flex's own
-#   scripts/preprocess_flex_xcframework.sh (pinned) and a -library repackage,
-#   see scripts/flex/make_flex_ios_spm.sh.
+#   Package.swift. Made from the first with flutter_litert_flex's
+#   preprocess_flex_xcframework.sh (a copy in scripts/flex) and a -library
+#   repackage, see scripts/flex/make_flex_ios_spm.sh.
 #
 # The two slices build in parallel jobs (about 1 h each on a standard runner),
 # then a packaging job assembles, verifies and uploads. Outputs are Actions
@@ -44,9 +44,6 @@ env:
   TF_COMMIT: a481b10260dfdf833a1b16007eead49c1d7febf3
   USE_BAZEL_VERSION: 7.7.0
   EXPECT_VERSION: 2.21.0
-  # flutter_litert_flex scripts/preprocess_flex_xcframework.sh, pinned.
-  FLEX_REPO_COMMIT: af65014505cc1fd0b0e959de0dfaf86c170b6239
-  PREPROCESS_SHA256: 5fa7fcfcd6591109d326188f6a5ecaf7f26c67bf2c096a82cfcbdf43dc4a3a04
   # Previous release (TF 2.20.0) for the comparisons.
   REF_RAW_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.0.0/TensorFlowLiteFlex-ios.xcframework.zip
   REF_RAW_SHA256: b06e5e793e45d923cc6757f3af3562259883e0b5b1292f456ced416bc47edee8

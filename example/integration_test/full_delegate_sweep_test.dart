@@ -17,14 +17,23 @@ import 'package:flutter_litert/native.dart';
 const int iterations = 25;
 const int warmup = 8;
 
-const roots = <String>[
-  '/Users/hugocornellier/IdeaProjects/animal_detection/assets',
-  '/Users/hugocornellier/IdeaProjects/face_detection_tflite/assets',
-  '/Users/hugocornellier/IdeaProjects/object_detection/assets',
-  '/Users/hugocornellier/IdeaProjects/pose_detection/assets',
-  '/Users/hugocornellier/IdeaProjects/hand_detection/assets',
-  '/Users/hugocornellier/IdeaProjects/cat_detection/assets',
-  '/Users/hugocornellier/IdeaProjects/dog_detection/assets',
+// Directory holding the detection package checkouts (animal_detection,
+// face_detection_tflite, ...). Pass it with
+// --dart-define=MODEL_REPOS_ROOT=<dir>; the tests skip when it is unset.
+const _repositoriesRoot = String.fromEnvironment('MODEL_REPOS_ROOT');
+const _skip = _repositoriesRoot == ''
+    ? 'Pass --dart-define=MODEL_REPOS_ROOT=<dir> to run'
+    : null;
+
+// Searched for .tflite files under <MODEL_REPOS_ROOT>/<repository>/assets.
+const repositories = <String>[
+  'animal_detection',
+  'face_detection_tflite',
+  'object_detection',
+  'pose_detection',
+  'hand_detection',
+  'cat_detection',
+  'dog_detection',
 ];
 
 // mode name -> builds (options, delegate-to-delete)
@@ -113,8 +122,8 @@ String _benchCell(
 
 List<File> _discoverModels() {
   final found = <File>[];
-  for (final root in roots) {
-    final dir = Directory(root);
+  for (final repository in repositories) {
+    final dir = Directory('$_repositoriesRoot/$repository/assets');
     if (!dir.existsSync()) continue;
     for (final e in dir.listSync(recursive: true, followLinks: false)) {
       if (e is! File) continue;
@@ -135,9 +144,9 @@ void main() {
   final modeNames = modeBuilders.keys.toList();
   final rows = <String>[];
 
-  group('Full delegate sweep (-d macos)', () {
+  group('Full delegate sweep (-d macos)', skip: _skip, () {
     for (final f in models) {
-      final repo = f.path.split('/IdeaProjects/')[1].split('/')[0];
+      final repo = f.path.substring(_repositoriesRoot.length + 1).split('/')[0];
       final name = f.path.split('/').last.replaceAll('.tflite', '');
       final sizeMb = (f.lengthSync() / (1024 * 1024)).toStringAsFixed(1);
       final label = '$repo/$name';

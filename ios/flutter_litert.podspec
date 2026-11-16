@@ -14,7 +14,7 @@ runtimes, classic delegates, and the CompiledModel API.
                        DESC
   s.homepage         = 'https://github.com/google-ai-edge/flutter_litert'
   s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
-  s.author           = { 'Hugo Cornellier' => 'hugo@hugocornellier.com' }
+  s.author           = { 'flutter_litert' => 'https://github.com/google-ai-edge/flutter_litert' }
 
   # This will ensure the source files in Classes/ are included in the native
   # builds of apps using this FFI plugin. Podspec does not support relative

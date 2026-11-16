@@ -19,18 +19,25 @@ import 'package:flutter_litert/native.dart';
 const int iterations = 30;
 const int warmup = 8;
 
-// model label -> absolute path
+// Directory holding the detection package checkouts (animal_detection,
+// face_detection_tflite, ...). Pass it with
+// --dart-define=MODEL_REPOS_ROOT=<dir>; the tests skip when it is unset.
+const _repositoriesRoot = String.fromEnvironment('MODEL_REPOS_ROOT');
+const _skip = _repositoriesRoot == ''
+    ? 'Pass --dart-define=MODEL_REPOS_ROOT=<dir> to run'
+    : null;
+
+// model label -> path under MODEL_REPOS_ROOT
 const models = <String, String>{
   'species_classifier_f16':
-      '/Users/hugocornellier/IdeaProjects/animal_detection/assets/models/species_classifier_float16.tflite',
+      'animal_detection/assets/models/species_classifier_float16.tflite',
   'superanimal_rtmpose_f16':
-      '/Users/hugocornellier/IdeaProjects/animal_detection/assets/models/superanimal_rtmpose_s_float16.tflite',
+      'animal_detection/assets/models/superanimal_rtmpose_s_float16.tflite',
   'selfie_multiclass':
-      '/Users/hugocornellier/IdeaProjects/face_detection_tflite/assets/models/selfie_multiclass.tflite',
+      'face_detection_tflite/assets/models/selfie_multiclass.tflite',
   'selfie_segmenter':
-      '/Users/hugocornellier/IdeaProjects/face_detection_tflite/assets/models/selfie_segmenter.tflite',
-  'mobilefacenet':
-      '/Users/hugocornellier/IdeaProjects/face_detection_tflite/assets/models/mobilefacenet.tflite',
+      'face_detection_tflite/assets/models/selfie_segmenter.tflite',
+  'mobilefacenet': 'face_detection_tflite/assets/models/mobilefacenet.tflite',
 };
 
 const modes = <String, PerformanceConfig>{
@@ -83,8 +90,9 @@ void main() {
 
   final summary = <String>[];
 
-  group('CoreML model sweep (direct Interpreter, -d macos)', () {
-    models.forEach((modelName, path) {
+  group('CoreML model sweep (direct Interpreter, -d macos)', skip: _skip, () {
+    models.forEach((modelName, relativePath) {
+      final path = '$_repositoriesRoot/$relativePath';
       test(modelName, timeout: const Timeout(Duration(minutes: 10)), () async {
         final inShape = () {
           final bytes = File(path).readAsBytesSync();

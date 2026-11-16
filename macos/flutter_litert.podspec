@@ -11,7 +11,7 @@ LiteRT (formerly TensorFlow Lite) Flutter plugin with MediaPipe custom operation
                        DESC
   s.homepage         = 'https://github.com/google-ai-edge/flutter_litert'
   s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
-  s.author           = { 'Hugo Cornellier' => 'hugo@hugocornellier.com' }
+  s.author           = { 'flutter_litert' => 'https://github.com/google-ai-edge/flutter_litert' }
 
   s.source           = { :path => '.' }
   s.source_files     = 'Classes/**/*'

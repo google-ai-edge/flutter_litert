@@ -911,7 +911,7 @@ Worth committing as a regression test once the fixes land.
 - All GPU measurements are macOS and iOS **simulator**. The simulator's Metal runs on the
   host GPU through a translation layer. The **no-op findings are op-support facts** and
   hold everywhere; the **relative GPU timings are not** predictive of device.
-- Not yet run on physical hardware. `Hugo's iPhone` (iOS 26.5) is visible to
+- Not yet run on physical hardware. A physical iPhone (iOS 26.5) was visible to
   `xcrun xctrace list devices` but was not connected during this investigation.
 - The macOS-vs-iOS CPU gap (1.3-1.9x generally, 3.05x for `landmarks_v3l_384`) is real and
   reproducible but not diagnosed. Separate issue; desktop-only, does not affect shipped

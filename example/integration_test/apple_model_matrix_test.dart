@@ -33,10 +33,10 @@ import 'package:flutter_litert/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
-var _repositoriesRoot = const String.fromEnvironment(
-  'MODEL_REPOS_ROOT',
-  defaultValue: '/Users/hugocornellier/IdeaProjects',
-);
+// macOS only. test/benchmark/run_apple_model_matrix.sh passes it through the
+// runtime config; a direct `flutter test` run passes
+// --dart-define=MODEL_REPOS_ROOT=<dir> and skips the matrix when it is unset.
+var _repositoriesRoot = const String.fromEnvironment('MODEL_REPOS_ROOT');
 var _iterations = const int.fromEnvironment('MATRIX_ITERS', defaultValue: 15);
 var _warmup = const int.fromEnvironment('MATRIX_WARMUP', defaultValue: 5);
 var _enforceAccuracy = const bool.fromEnvironment(
@@ -109,6 +109,10 @@ void _loadRuntimeConfig() {
 // source differs; every downstream stage sees identical bytes, which is what
 // keeps the macOS and iOS columns comparable.
 bool get _usesBundledModels => Platform.isIOS;
+
+String? get _skip => !_usesBundledModels && _repositoriesRoot.isEmpty
+    ? 'Pass --dart-define=MODEL_REPOS_ROOT=<dir> to run'
+    : null;
 
 class _ModelAsset {
   const _ModelAsset(this.repository, this.fileName);
@@ -1341,7 +1345,7 @@ void main() {
       _selectedModels.length *
       (_selectedInterpModes.length + _selectedCmModes.length);
 
-  group('Apple published-model backend matrix', () {
+  group('Apple published-model backend matrix', skip: _skip, () {
     test('runs on an Apple platform', () {
       expect(
         Platform.isMacOS || Platform.isIOS,

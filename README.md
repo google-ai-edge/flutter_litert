@@ -1935,7 +1935,7 @@ Google's `litert` and `litert-gpu` 2.3.2 AARs carry a `LICENSE` (Apache 2.0) and
 
 ### Web Demo / Example
 
-For a complete web demo (with WebGPU), see [pose_detection](https://github.com/hugocornellier/pose_detection) and its [web example](https://github.com/hugocornellier/pose_detection/tree/e93ffe99bdc05f4a397d3bf4b70f2a9454b3b0f5/example_web).
+For a complete web demo (with WebGPU), see [`example_web`](example_web): it runs YOLOv8n object detection in the browser on all three web inference surfaces (`CompiledModel`, `LiteRtInterpreter` and `Interpreter`), with WASM and WebGPU.
 
 ### Quick start (default tflite-js runtime)
 

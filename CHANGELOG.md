@@ -373,7 +373,7 @@ benchmarks.
 ## 3.10.0
 
 * **Opt-in LiteRT runtime from Google Play services on Android**
-  ([issue #23](https://github.com/hugocornellier/flutter_litert/issues/23)).
+  ([issue #23](https://github.com/google-ai-edge/flutter_litert/issues/23)).
   Setting `flutterLitert.runtime=playServices` in the app's
   `android/gradle.properties` builds against `play-services-litert` 17.0.0
   instead of packaging LiteRT in the APK. `Interpreter` and `CompiledModel`
@@ -397,14 +397,14 @@ benchmarks.
 
 ## 3.9.4
 
-* **Multi-input models now run on the web** ([issue #21](https://github.com/hugocornellier/flutter_litert/issues/21)).
+* **Multi-input models now run on the web** ([issue #21](https://github.com/google-ai-edge/flutter_litert/issues/21)).
   In JavaScript (dart2js) builds, `LiteRtInterpreter.runForMultipleInputs` and
   `CompiledModel.runAsync` failed on any model with two or more inputs with
   `'CastList<JSObject, Object>' is not a subtype of type 'JSArray<Object?>'`.
   Single-input models, WebAssembly (dart2wasm) builds, and native platforms
   were unaffected. A browser test with a two-input model now covers both entry
   points in CI. Thanks to @AvikArefin for the report and the fix
-  ([#22](https://github.com/hugocornellier/flutter_litert/pull/22)).
+  ([#22](https://github.com/google-ai-edge/flutter_litert/pull/22)).
 
 ## 3.9.3
 
@@ -469,12 +469,12 @@ behavior.
 
 ## 3.9.0
 
-* **Correct the native-only inference utility documentation** ([issue #17](https://github.com/hugocornellier/flutter_litert/issues/17)).
+* **Correct the native-only inference utility documentation** ([issue #17](https://github.com/google-ai-edge/flutter_litert/issues/17)).
   `InterpreterFactory` and `InterpreterPool` examples now import
   `package:flutter_litert/native.dart` so their native types resolve consistently
   in IDEs and static analysis. Document their supported platforms and the
   portable `CompiledModelConfig.auto()` alternative.
-* **Document the external OpenCV iOS CMake deployment-target fix** ([issue #19](https://github.com/hugocornellier/flutter_litert/issues/19)).
+* **Document the external OpenCV iOS CMake deployment-target fix** ([issue #19](https://github.com/google-ai-edge/flutter_litert/issues/19)).
   `dartcv4` 2.3.1 removes its hardcoded iOS 12 target and adds a deployment-target
   hook option. Document the upgrade, iOS 15 configuration, and Flutter SDK
   `meta` pin compatibility requirement. Upgrade the example to the fixed
@@ -492,7 +492,7 @@ behavior.
   Use `fromFileWithConfig`, `fromBufferWithConfig`, or the portable
   `fromBufferWithConfigAsync`. This provides the `PerformanceConfig.auto`
   equivalent requested in
-  [issue #18](https://github.com/hugocornellier/flutter_litert/issues/18)
+  [issue #18](https://github.com/google-ai-edge/flutter_litert/issues/18)
   without changing any existing constructor.
 * **Auto has a narrow, deterministic contract:** request strict GPU at fp32,
   then retry the complete model CPU-only if GPU construction fails. Auto does

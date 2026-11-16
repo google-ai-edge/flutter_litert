@@ -3,9 +3,11 @@
 # flutter_litert_flex's ios/flutter_litert_flex/Package.swift consumes, from a
 # freshly built TensorFlowLiteFlex-ios.xcframework.zip.
 #
-# 1. Runs flutter_litert_flex's own scripts/preprocess_flex_xcframework.sh,
-#    pinned by commit and sha256, with its download line replaced by a copy of
-#    the local zip and its dedup pattern widened if needed (see below). It dedups
+# 1. Runs preprocess_flex_xcframework.sh (next to this script; taken from
+#    flutter_litert_flex commit af65014, the one the flex-v2.0.0 files were
+#    built with, with only its unused DOWNLOAD_URL pointed at this repo), with
+#    its download line replaced by a copy of the local zip and its dedup pattern
+#    widened if needed (see below). It dedups
 #    Bazel's duplicate .o members, drops members that
 #    need WebP/ICU/protobuf-compiler symbols, and drops the members that define
 #    the XNNPack delegate (TensorFlowLiteC provides those).
@@ -16,22 +18,19 @@
 #    only embedded (see the comment in the flex Package.swift).
 #
 # Usage: make_flex_ios_spm.sh <TensorFlowLiteFlex-ios.xcframework.zip> <out dir>
-# Env:   FLEX_REPO_COMMIT, PREPROCESS_SHA256 (pins for the preprocess script)
 # Output: <out dir>/TensorFlowLiteFlex-spm.xcframework.zip (+ .sha256)
 set -euo pipefail
 
 RAW_ZIP="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 OUT_DIR="$(mkdir -p "$2" && cd "$2" && pwd)"
-: "${FLEX_REPO_COMMIT:?}" "${PREPROCESS_SHA256:?}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-script_url="https://raw.githubusercontent.com/hugocornellier/flutter_litert_flex/${FLEX_REPO_COMMIT}/scripts/preprocess_flex_xcframework.sh"
-curl -sSfL --retry 3 "$script_url" -o "$WORK/preprocess.sh"
-echo "${PREPROCESS_SHA256}  $WORK/preprocess.sh" | shasum -a 256 -c -
+cp "$SCRIPT_DIR/preprocess_flex_xcframework.sh" "$WORK/preprocess.sh"
 
-# What changes in the fetched script:
+# What changes in the copied script:
 # - the download becomes a copy of the local zip;
 # - the dedup's hash-suffix pattern also accepts 16 hex digits. Bazel 7.7.0
 #   (TF 2.21.0) names its second copy of a same-named object
@@ -40,10 +39,10 @@ echo "${PREPROCESS_SHA256}  $WORK/preprocess.sh" | shasum -a 256 -c -
 #   an -all_load link fails with about 2600 duplicate symbols (run
 #   42656958304).
 #
-# The pin may be on either side of flutter_litert_flex commit ea29249, which
-# made the same pattern change in the flex repo (script and podspec):
-# - before it (af65014, the pin the flex-v2.0.0 files were built with) the
-#   pattern is the {32} one and is widened here;
+# The copy may come from either side of flutter_litert_flex commit ea29249,
+# which made the same pattern change in the flex repo (script and podspec):
+# - before it (af65014, the copy in this repo) the pattern is the {32} one and
+#   is widened here;
 # - from it on the pattern is already the widened one and is left alone. From
 #   563e121 on the script also checks its download against DOWNLOAD_SHA256
 #   (the published zip), so it is run with DOWNLOAD_SHA256 set to the local

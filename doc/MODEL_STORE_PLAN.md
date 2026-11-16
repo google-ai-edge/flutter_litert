@@ -2,7 +2,7 @@
 
 Status: DRAFT (design review, nothing implemented)
 Date: 2026-07-13
-Owner: hugocornellier
+Owner: flutter_litert maintainers
 
 ## 1. Problem
 
