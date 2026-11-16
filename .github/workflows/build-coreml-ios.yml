@@ -38,10 +38,12 @@ jobs:
       TF_VERSION: v2.21.0
       EXPECTED_TF_VERSION: 2.21.0
       BAZEL_VERSION: 7.7.0
-      REF_ZIP_URL: https://github.com/hugocornellier/flutter_litert/releases/download/coreml-ios-v1.2.0/TensorFlowLiteCCoreML-spm.xcframework.zip
+      REF_ZIP_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/coreml-ios-v1.2.0/TensorFlowLiteCCoreML-spm.xcframework.zip
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Free disk space
         run: |
@@ -68,7 +70,7 @@ jobs:
           echo "iphoneos SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -302,7 +304,7 @@ jobs:
           stat -f "size %z" TensorFlowLiteCCoreML-ios.xcframework.zip
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteCCoreML-ios-xcframework
           path: ~/cm-out/

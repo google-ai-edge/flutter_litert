@@ -4,12 +4,12 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_litert'
-  s.version          = '4.1.1'
+  s.version          = '4.1.2'
   s.summary          = 'LiteRT (formerly TensorFlow Lite) for Flutter with custom ops support.'
   s.description      = <<-DESC
 LiteRT (formerly TensorFlow Lite) Flutter plugin with MediaPipe custom operations support.
                        DESC
-  s.homepage         = 'https://github.com/hugocornellier/flutter_litert'
+  s.homepage         = 'https://github.com/google-ai-edge/flutter_litert'
   s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
   s.author           = { 'Hugo Cornellier' => 'hugo@hugocornellier.com' }
 

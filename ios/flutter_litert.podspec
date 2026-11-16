@@ -6,13 +6,13 @@ require 'digest'
 
 Pod::Spec.new do |s|
   s.name             = 'flutter_litert'
-  s.version          = '4.1.1'
+  s.version          = '4.1.2'
   s.summary          = 'LiteRT (formerly TensorFlow Lite) plugin for Flutter apps.'
   s.description      = <<-DESC
 LiteRT (formerly TensorFlow Lite) plugin for Flutter apps with bundled native
 runtimes, classic delegates, and the CompiledModel API.
                        DESC
-  s.homepage         = 'https://github.com/hugocornellier/flutter_litert'
+  s.homepage         = 'https://github.com/google-ai-edge/flutter_litert'
   s.license          = { :type => 'Apache-2.0', :file => '../LICENSE' }
   s.author           = { 'Hugo Cornellier' => 'hugo@hugocornellier.com' }
 
@@ -98,7 +98,7 @@ runtimes, classic delegates, and the CompiledModel API.
     puts '[flutter_litert] Downloading TensorFlow Lite iOS frameworks...'
     zip = File.join(framework_dir, '_tflite_ios.zip')
     tflite_zip_sha256 = 'd664f859c2d343ac2bb6482b0ae921a817e02c2f4f5130ed91b83ea36790158e'
-    system("curl #{curl_options} 'https://github.com/hugocornellier/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/ios-frameworks.zip' -o '#{zip}'")
+    system("curl #{curl_options} 'https://github.com/google-ai-edge/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/ios-frameworks.zip' -o '#{zip}'")
     abort '[flutter_litert] ERROR: Failed to download TFLite iOS frameworks. Check your internet connection.' unless $?.success?
     verify_download.call(zip, tflite_zip_sha256, 'The TFLite iOS frameworks download')
     # Remove the old frameworks first so no file of an earlier release (or its
@@ -138,7 +138,7 @@ runtimes, classic delegates, and the CompiledModel API.
     puts '[flutter_litert] Downloading LiteRT Next iOS frameworks...'
     zip = File.join(framework_dir, '_litert_ios.zip')
     litert_zip_sha256 = 'e2bff21bae9bfc7c59e8acc7bcab8a9bab25e1798d1d49895b04b4c606dc46cc'
-    system("curl #{curl_options} 'https://github.com/hugocornellier/flutter_litert/releases/download/litert-ios-v2.0.0/litert-ios-frameworks.zip' -o '#{zip}'")
+    system("curl #{curl_options} 'https://github.com/google-ai-edge/flutter_litert/releases/download/litert-ios-v2.0.0/litert-ios-frameworks.zip' -o '#{zip}'")
     abort '[flutter_litert] ERROR: Failed to download LiteRT Next iOS frameworks. Check your internet connection.' unless $?.success?
     verify_download.call(zip, litert_zip_sha256, 'The LiteRT Next iOS frameworks download')
     # Remove any stale slices first so an old arm64-only simulator slice can't

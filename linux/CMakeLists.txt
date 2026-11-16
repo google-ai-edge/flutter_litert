@@ -135,7 +135,7 @@ if(FLUTTER_LITERT_TARGET_IS_X86_64)
   if(FLUTTER_LITERT_BUNDLE_DESKTOP_RUNTIME)
     flutter_litert_fetch_lib(
       "${CMAKE_CURRENT_SOURCE_DIR}/lib/libLiteRtWebGpuAccelerator.so"
-      "https://github.com/hugocornellier/flutter_litert/releases/download/litert-desktop-gpu-v2.3.0/libLiteRtWebGpuAccelerator.so"
+      "https://github.com/google-ai-edge/flutter_litert/releases/download/litert-desktop-gpu-v2.3.0/libLiteRtWebGpuAccelerator.so"
       "b67f193ae6eb8ad3a15349f54aba696c97d6f981c92bc2eb1096cbe9e2835b25")
     list(APPEND flutter_litert_bundled_libraries
       # LiteRT Next runtime (CompiledModel API) + WebGPU/Vulkan GPU accelerator,

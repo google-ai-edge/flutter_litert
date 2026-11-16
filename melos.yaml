@@ -16,7 +16,7 @@
 
 name: flutter_litert
 
-repository: https://github.com/hugocornellier/flutter_litert
+repository: https://github.com/google-ai-edge/flutter_litert
 
 packages:
   - .

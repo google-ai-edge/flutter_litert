@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 env:
-  BASELINE_URL: https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-win.dll
+  BASELINE_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-win.dll
 
 jobs:
   msvc1:
@@ -183,20 +183,22 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       # A chain that failed has no artifact; its verify leg then does nothing.
       - name: Download the new DLL
         id: dl
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: flex-windows-${{ matrix.variant }}
           path: new
 
       - name: Set up MSVC (dumpbin, cl)
         if: steps.dl.outcome == 'success'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
         with:
           arch: x64
 
@@ -210,17 +212,19 @@ jobs:
 
       - name: Verify
         if: steps.dl.outcome == 'success'
+        env:
+          MATRIX_VARIANT: ${{ matrix.variant }}
         run: |
           set +e
           bash scripts/flex_desktop/verify_windows.sh \
             new/libtensorflowlite_flex-win.dll old/libtensorflowlite_flex-win.dll verify
           rc=$?
-          { echo "### ${{ matrix.variant }}"; echo '```'; cat new/build-info.txt; echo; cat verify/verify-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### ${MATRIX_VARIANT}"; echo '```'; cat new/build-info.txt; echo; cat verify/verify-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $rc
 
       - name: Upload verify report
         if: always() && steps.dl.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flex-windows-${{ matrix.variant }}-verify
           path: verify

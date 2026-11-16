@@ -58,8 +58,8 @@ env:
   TF_VERSION: v2.21.0
   EXPECTED_TF_VERSION: 2.21.0
   BAZEL_VERSION: 7.7.0
-  REF_PODS_ZIP_URL: https://github.com/hugocornellier/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/ios-frameworks.zip
-  REF_SPM_BASE_URL: https://github.com/hugocornellier/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1
+  REF_PODS_ZIP_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/ios-frameworks.zip
+  REF_SPM_BASE_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1
 
 jobs:
   plan:
@@ -101,7 +101,9 @@ jobs:
       matrix:
         config: [ios_arm64, ios_sim_arm64, ios_x86_64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Free disk space
         run: |
@@ -125,7 +127,7 @@ jobs:
           echo "iphoneos SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -170,6 +172,8 @@ jobs:
           ls -la tensorflow/lite/ios/BUILD
 
       - name: Build TensorFlowLiteC and TensorFlowLiteCMetal (${{ matrix.config }})
+        env:
+          MATRIX_CONFIG: ${{ matrix.config }}
         run: |
           cd ~/tf-src
           # --config=ios --cpu=<cpu>, as the 2.20.0 iOS workflows did. TF 2.21's
@@ -177,37 +181,40 @@ jobs:
           # and with it Objective-C compiles fail with "DEVELOPER_DIR not set".
           USE_BAZEL_VERSION=$BAZEL_VERSION bazelisk build -c opt \
             --config=ios \
-            --cpu=${{ matrix.config }} \
+            --cpu=${MATRIX_CONFIG} \
             --local_ram_resources=HOST_RAM*0.7 \
             --jobs=4 \
             //tensorflow/lite/ios:TensorFlowLiteC_framework \
             //tensorflow/lite/ios:TensorFlowLiteCMetal_framework
 
       - name: Collect and inspect
+        env:
+          MATRIX_CONFIG: ${{ matrix.config }}
+          METAL_PATCH: ${{ needs.plan.outputs.metal_patch }}
         run: |
           set -o pipefail
           mkdir -p ~/raw
           for name in TensorFlowLiteC TensorFlowLiteCMetal; do
-            dest=~/raw/$name-${{ matrix.config }}
+            dest=~/raw/$name-${MATRIX_CONFIG}
             mkdir -p "$dest"
             unzip -q -o ~/tf-src/bazel-bin/tensorflow/lite/ios/${name}_framework.zip -d "$dest"
             (cd "$dest" && find . -type f | sort)
             bash scripts/inspect_ios_tflite_binary.sh "$dest/$name.framework/$name" \
-              | tee -a ~/raw/inspect-${{ matrix.config }}.txt
+              | tee -a ~/raw/inspect-${MATRIX_CONFIG}.txt
           done
           {
-            echo "config: ${{ matrix.config }}"
+            echo "config: ${MATRIX_CONFIG}"
             echo "tf_ref: $TF_VERSION"
             echo "tf_commit: $(git -C ~/tf-src rev-parse HEAD)"
-            echo "metal_transpose_conv_v4: ${{ needs.plan.outputs.metal_patch }}"
+            echo "metal_transpose_conv_v4: ${METAL_PATCH}"
             echo "bazel: $BAZEL_VERSION"
             echo "runner: macOS $(sw_vers -productVersion), $(xcodebuild -version | head -1), iphoneos SDK $(xcrun --sdk iphoneos --show-sdk-version)"
-          } > ~/raw/build-info-${{ matrix.config }}.txt
-          cat ~/raw/build-info-${{ matrix.config }}.txt
-          { echo '```'; cat ~/raw/build-info-${{ matrix.config }}.txt ~/raw/inspect-${{ matrix.config }}.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          } > ~/raw/build-info-${MATRIX_CONFIG}.txt
+          cat ~/raw/build-info-${MATRIX_CONFIG}.txt
+          { echo '```'; cat ~/raw/build-info-${MATRIX_CONFIG}.txt ~/raw/inspect-${MATRIX_CONFIG}.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload raw slice
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: tflite-ios-raw-${{ matrix.config }}
           path: ~/raw/
@@ -228,7 +235,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Select Xcode
         run: |
@@ -242,7 +251,7 @@ jobs:
 
       - name: Download raw slices (this run)
         if: needs.plan.outputs.reuse == ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: tflite-ios-raw-*
           merge-multiple: true
@@ -250,7 +259,7 @@ jobs:
 
       - name: Download raw slices (run ${{ needs.plan.outputs.reuse }})
         if: needs.plan.outputs.reuse != ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: tflite-ios-raw-*
           merge-multiple: true
@@ -261,7 +270,7 @@ jobs:
       - name: Download Core ML xcframework (this run)
         if: needs.coreml.result == 'success' || needs.coreml.result == 'failure'
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: TensorFlowLiteCCoreML-ios-xcframework
           path: ~/coreml
@@ -400,15 +409,19 @@ jobs:
 
       - name: Manifest
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
+        env:
+          COMPARE_OUTCOME: ${{ steps.compare.outcome }}
+          NMEDIT_OUTCOME: ${{ steps.nmedit.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
         run: |
           cd ~/out
           {
             echo "tf_ref: $TF_VERSION"
             echo "bazel: $BAZEL_VERSION"
             echo "package runner: macOS $(sw_vers -productVersion), $(xcodebuild -version | head -1)"
-            echo "compare: ${{ steps.compare.outcome }}"
-            echo "nmedit list: ${{ steps.nmedit.outcome }}"
-            echo "link and simulator run: ${{ steps.runtime.outcome }}"
+            echo "compare: ${COMPARE_OUTCOME}"
+            echo "nmedit list: ${NMEDIT_OUTCOME}"
+            echo "link and simulator run: ${RUNTIME_OUTCOME}"
             echo
             echo "zips:"
             for z in ios-frameworks.zip TensorFlowLiteC-spm.xcframework.zip TensorFlowLiteCMetal-spm.xcframework.zip; do
@@ -425,7 +438,7 @@ jobs:
 
       - name: Upload ios-frameworks.zip (CocoaPods)
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-frameworks
           path: |
@@ -436,7 +449,7 @@ jobs:
 
       - name: Upload TensorFlowLiteC-spm
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteC-spm
           path: |
@@ -447,7 +460,7 @@ jobs:
 
       - name: Upload TensorFlowLiteCMetal-spm
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteCMetal-spm
           path: |
@@ -458,7 +471,7 @@ jobs:
 
       - name: Upload TensorFlowLiteCCoreML-spm
         if: ${{ !cancelled() && steps.package.outcome == 'success' && steps.package.outputs.coreml == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteCCoreML-spm
           path: |
@@ -469,7 +482,7 @@ jobs:
 
       - name: Upload verification reports
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-tflite-verify
           path: ~/out/verify/
@@ -477,6 +490,9 @@ jobs:
 
       - name: Fail if a check failed
         if: steps.compare.outcome == 'failure' || steps.nmedit.outcome == 'failure'
+        env:
+          COMPARE_OUTCOME: ${{ steps.compare.outcome }}
+          NMEDIT_OUTCOME: ${{ steps.nmedit.outcome }}
         run: |
-          echo "compare: ${{ steps.compare.outcome }}, nmedit list: ${{ steps.nmedit.outcome }}"
+          echo "compare: ${COMPARE_OUTCOME}, nmedit list: ${NMEDIT_OUTCOME}"
           exit 1

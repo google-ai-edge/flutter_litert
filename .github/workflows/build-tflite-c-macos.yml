@@ -60,10 +60,12 @@ jobs:
     runs-on: ${{ inputs.arm64_runner || 'macos-15' }}
     timeout-minutes: 240
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -129,7 +131,7 @@ jobs:
           cat build-info-arm64.txt libtensorflowlite_c-arm64.dylib.sha256
 
       - name: Upload arm64 slice
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: libtensorflowlite_c-mac-arm64
           path: |
@@ -142,7 +144,9 @@ jobs:
     runs-on: ${{ inputs.x86_64_runner || 'macos-15-intel' }}
     timeout-minutes: 240
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Toolchain
         run: |
@@ -228,7 +232,7 @@ jobs:
           cat build-info-x86_64.txt libtensorflowlite_c-x86_64.dylib.sha256
 
       - name: Upload x86_64 slice
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: libtensorflowlite_c-mac-x86_64
           path: |
@@ -245,14 +249,16 @@ jobs:
     # stall must end here, not at the 6 hour limit.
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: libtensorflowlite_c-mac-arm64
           path: slices
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: libtensorflowlite_c-mac-x86_64
           path: slices
@@ -304,7 +310,7 @@ jobs:
           stat -f "size %z" libtensorflowlite_c-mac.dylib
 
       - name: Upload universal dylib
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: libtensorflowlite_c-mac
           path: out/

@@ -174,18 +174,35 @@ Future<void> _injectLoaderScript() {
 
   // The body runs as a module; bare imports go through jsdelivr's `+esm`
   // bundle so they resolve in the browser without an import map.
+  //
+  // A failed load is tried again, 3 tries in all, waiting 1 s and then 2 s:
+  // jsDelivr, the default host, briefly answers HTTP 503 when it cannot reach
+  // its origin. Each try fetches anew: browsers do not keep a failed import()
+  // in the module map, and loadLiteRt() can be called again after it rejects
+  // (it then loads the WASM files again).
   final String body =
       "const moduleUrl = ${_jsString(_liteRtModuleUrl)};\n"
       "const wasmUrl = ${_jsString(_liteRtWasmUrl)};\n"
       "try {\n"
-      "  const mod = await import(moduleUrl);\n"
-      "  await mod.loadLiteRt(wasmUrl);\n"
-      "  window.LiteRt = mod;\n"
-      "  window.LiteRtReady = true;\n"
-      "} catch (e) {\n"
-      "  console.error('flutter_litert: LiteRT.js load failed:', e);\n"
-      "  window.LiteRtReady = false;\n"
-      "  window.LiteRtLoadError = e && e.message ? e.message : String(e);\n"
+      "  for (let attempt = 1; ; attempt++) {\n"
+      "    try {\n"
+      "      const mod = await import(moduleUrl);\n"
+      "      await mod.loadLiteRt(wasmUrl);\n"
+      "      window.LiteRt = mod;\n"
+      "      window.LiteRtReady = true;\n"
+      "      break;\n"
+      "    } catch (e) {\n"
+      "      if (attempt < 3) {\n"
+      "        console.warn('flutter_litert: LiteRT.js load failed, retrying:', e);\n"
+      "        await new Promise((r) => setTimeout(r, 1000 * attempt));\n"
+      "        continue;\n"
+      "      }\n"
+      "      console.error('flutter_litert: LiteRT.js load failed:', e);\n"
+      "      window.LiteRtReady = false;\n"
+      "      window.LiteRtLoadError = e && e.message ? e.message : String(e);\n"
+      "      break;\n"
+      "    }\n"
+      "  }\n"
       "} finally {\n"
       "  window.dispatchEvent(new Event('litert-ready'));\n"
       "}";

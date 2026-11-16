@@ -13,7 +13,7 @@ The build is automated in `.github/workflows/build-flex-macos.yml`. The steps be
 ## Run the workflow
 
 ```bash
-gh workflow run build-flex-macos.yml --repo hugocornellier/flutter_litert --ref <branch>
+gh workflow run build-flex-macos.yml --repo google-ai-edge/flutter_litert --ref <branch>
 ```
 
 One job on `macos-15` (about 1.5 to 3 h). It uploads:
@@ -110,7 +110,7 @@ bash <flutter_litert>/scripts/flex/make_flex_macos_spm.sh libtensorflowlite_flex
 ## Step 7: Verify
 
 ```bash
-REF_DYLIB_URL=https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-mac.dylib \
+REF_DYLIB_URL=https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-mac.dylib \
 REF_DYLIB_SHA256=8e08e2a9c7e1042b5ba0d309c0180e8d8d2b8a92bb65ec5164344dafd170d2e2 \
 EXPECT_VERSION=2.21.0 EXPECT_MINOS=12.0 \
   bash <flutter_litert>/scripts/flex/verify_flex_macos.sh libtensorflowlite_flex-mac.dylib report

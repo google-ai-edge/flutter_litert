@@ -31,9 +31,9 @@ env:
   # explicit minimum and came out as 15.2 (the SDK of the machine it was
   # built on).
   MACOS_MIN: '12.0'
-  REF_DYLIB_URL: https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-mac.dylib
+  REF_DYLIB_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.0.0/libtensorflowlite_flex-mac.dylib
   REF_DYLIB_SHA256: 8e08e2a9c7e1042b5ba0d309c0180e8d8d2b8a92bb65ec5164344dafd170d2e2
-  REF_SPM_URL: https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.1.0/flutter_litert_flex-macos-spm.xcframework.zip
+  REF_SPM_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.1.0/flutter_litert_flex-macos-spm.xcframework.zip
   REF_SPM_SHA256: 36b1a080a0f9be92aa2eb85fcebff49a63957f84c2f64f4b0464320cdf72bcfc
 
 jobs:
@@ -41,13 +41,15 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Free disk space
         run: bash scripts/flex/free_macos_runner_disk.sh
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -121,7 +123,7 @@ jobs:
           cat out/*.sha256
 
       - name: Upload dylib
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: libtensorflowlite_flex-mac
           path: |
@@ -148,7 +150,7 @@ jobs:
           fi
 
       - name: Upload macOS SPM xcframework
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flutter_litert_flex-macos-spm-xcframework
           path: |
@@ -179,7 +181,7 @@ jobs:
 
       - name: Upload verification report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flex-macos-verify-report
           path: report

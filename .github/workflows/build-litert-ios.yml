@@ -32,7 +32,7 @@ on:
         default: ''
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   LITERT_VERSION: v2.3.2
@@ -43,10 +43,15 @@ env:
 
 jobs:
   build:
+    # Uploads to a release when release_tag is set.
+    permissions:
+      contents: write
     runs-on: macos-15
     timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Install Bazelisk
         run: brew install bazelisk
@@ -54,7 +59,7 @@ jobs:
       # The runner's own python3 is newer than any version LiteRT has
       # requirement lock files for, and the hermetic Python follows it.
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -127,7 +132,7 @@ jobs:
             LiteRt-spm.xcframework.zip LiteRtMetalAccelerator-spm.xcframework.zip
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: litert-ios-xcframeworks
           path: |
@@ -138,10 +143,11 @@ jobs:
       - name: Upload to release
         if: ${{ github.event.inputs.release_tag != '' }}
         env:
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload '${{ github.event.inputs.release_tag }}' \
-            --repo '${{ github.repository }}' --clobber \
+          gh release upload "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" --clobber \
             litert-ios-frameworks.zip \
             LiteRt-spm.xcframework.zip \
             LiteRtMetalAccelerator-spm.xcframework.zip

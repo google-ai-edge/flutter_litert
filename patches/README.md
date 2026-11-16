@@ -239,11 +239,11 @@ framework from the same TensorFlow version with this patch applied.
 **Packaged macOS artifact.** The dylib committed at
 `macos/flutter_litert/Sources/flutter_litert/Resources/libtensorflowlite_coreml-mac.dylib`
 was rebuilt from TensorFlow `v2.21.0` by
-[workflow run 42666219391](https://github.com/hugocornellier/flutter_litert/actions/runs/42666219391)
+[workflow run 42666219391](https://github.com/google-ai-edge/flutter_litert/actions/runs/42666219391)
 with this patch applied. Its SHA-256 is
 `7b2cc71c071036c9bb7fc7f13a089bbdd03c4d1afaea661364a19a9dbd56a937`.
 The previous `v2.20.0` build, from
-[workflow run 30707513086](https://github.com/hugocornellier/flutter_litert/actions/runs/30707513086),
+[workflow run 30707513086](https://github.com/google-ai-edge/flutter_litert/actions/runs/30707513086),
 had SHA-256 `c33c4e904613aed37a409b2805db7099edc4a8952f3e4794f5e84e58c5654580`.
 
 On that `v2.20.0` dylib, the post-build macOS matrix exercised all 29 published

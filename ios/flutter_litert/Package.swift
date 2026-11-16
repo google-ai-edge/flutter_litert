@@ -34,17 +34,17 @@ let package = Package(
         // scripts/wrap_litert_ios_frameworks.sh.)
         .binaryTarget(
             name: "TensorFlowLiteC",
-            url: "https://github.com/hugocornellier/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/TensorFlowLiteC-spm.xcframework.zip",
+            url: "https://github.com/google-ai-edge/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/TensorFlowLiteC-spm.xcframework.zip",
             checksum: "f3165e8f5c4a44fce74ed9ea33db0ced1394b4034d12cb06ac7f0ae0e4c0bdba"
         ),
         .binaryTarget(
             name: "TensorFlowLiteCMetal",
-            url: "https://github.com/hugocornellier/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/TensorFlowLiteCMetal-spm.xcframework.zip",
+            url: "https://github.com/google-ai-edge/flutter_litert/releases/download/tflite-ios-v2.21.0-xnn1/TensorFlowLiteCMetal-spm.xcframework.zip",
             checksum: "b0bfbdcfa8be4951d375dae6bfc614f80e5000758f48ff3d977dd640a862d02b"
         ),
         .binaryTarget(
             name: "TensorFlowLiteCCoreML",
-            url: "https://github.com/hugocornellier/flutter_litert/releases/download/coreml-ios-v1.2.0/TensorFlowLiteCCoreML-spm.xcframework.zip",
+            url: "https://github.com/google-ai-edge/flutter_litert/releases/download/coreml-ios-v1.2.0/TensorFlowLiteCCoreML-spm.xcframework.zip",
             checksum: "a16b908a36ad17cb520b6a79a8f81aa45b57e8c2abf970746686d3458b41aedd"
         ),
         // LiteRT Next runtime + Metal accelerator (CompiledModel API). These
@@ -61,12 +61,12 @@ let package = Package(
         // RTLD_DEFAULT registration probe instead.
         .binaryTarget(
             name: "LiteRt",
-            url: "https://github.com/hugocornellier/flutter_litert/releases/download/litert-ios-v2.0.0/LiteRt-spm.xcframework.zip",
+            url: "https://github.com/google-ai-edge/flutter_litert/releases/download/litert-ios-v2.0.0/LiteRt-spm.xcframework.zip",
             checksum: "8cb7f1412c78481aa3cd942e0f99c63cc1bc7c97ff3ff8f114d08811e4a384cb"
         ),
         .binaryTarget(
             name: "LiteRtMetalAccelerator",
-            url: "https://github.com/hugocornellier/flutter_litert/releases/download/litert-ios-v2.0.0/LiteRtMetalAccelerator-spm.xcframework.zip",
+            url: "https://github.com/google-ai-edge/flutter_litert/releases/download/litert-ios-v2.0.0/LiteRtMetalAccelerator-spm.xcframework.zip",
             checksum: "cb6cdab2109fd1a256ff848126bf6bb768f6c564c03e008cce77cf07e2af61f0"
         ),
         .target(

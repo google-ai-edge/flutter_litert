@@ -1,3 +1,6 @@
+// The flex host tests FlexDelegate on purpose until it is removed in 5.0.0.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 import 'dart:typed_data';
 

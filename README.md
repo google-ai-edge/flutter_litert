@@ -8,8 +8,8 @@
 <br>
 <a href="https://pub.dev/packages/flutter_litert"><img src="https://img.shields.io/pub/v/flutter_litert?label=pub.dev&labelColor=333940&logo=dart" alt="Pub Version"></a>
 <a href="https://pub.dev/packages/flutter_litert/score"><img src="https://img.shields.io/pub/points/flutter_litert?color=2E8B57&label=pub%20points" alt="pub points"></a>
-<a href="https://github.com/hugocornellier/flutter_litert/actions/workflows/flutter-ci.yml"><img src="https://github.com/hugocornellier/flutter_litert/actions/workflows/flutter-ci.yml/badge.svg" alt="Flutter CI"></a>
-<a href="https://github.com/hugocornellier/flutter_litert/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-007A88.svg?logo=apache" alt="License"></a>
+<a href="https://github.com/google-ai-edge/flutter_litert/actions/workflows/flutter-ci.yml"><img src="https://github.com/google-ai-edge/flutter_litert/actions/workflows/flutter-ci.yml/badge.svg" alt="Flutter CI"></a>
+<a href="https://github.com/google-ai-edge/flutter_litert/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-007A88.svg?logo=apache" alt="License"></a>
 </p>
 
 <hr>
@@ -107,14 +107,14 @@ See [Interpreter (classic API)](#interpreter-classic-api) for isolates, delegate
 A full native example app is available on pub.dev: [flutter_litert example](https://pub.dev/packages/flutter_litert/example). It depends on bundled assets from this repo's `example/` directory (`.tflite` model, label map, and sample images), so if you copy code from pub.dev, clone the repo and run it from `example/`:
 
 ```sh
-git clone https://github.com/hugocornellier/flutter_litert
+git clone https://github.com/google-ai-edge/flutter_litert
 cd flutter_litert/example
 flutter run
 ```
 
 For web, see [Web support](#web-support).
 
-The optional `flutter_litert_flex` addon has a dedicated integration host in `example/flex_test_host` that proves it installs and runs on its own. The main example does not depend on it, because Android has no flex delegate since 4.0.0 and an Android build that includes the addon fails.
+The optional `flutter_litert_flex` addon has a dedicated integration host in `example/flex_test_host` that proves it installs and runs on its own. The main example does not depend on it, because Android has no flex delegate since 4.0.0 and an Android build that includes the addon fails. `FlexDelegate` is deprecated since 4.1.2 and will be removed in 5.0.0, together with this host (see [FlexDelegate (deprecated)](#flexdelegate-for-complex-model-training)).
 
 ### Demos
 
@@ -841,9 +841,11 @@ final interpreter = await Interpreter.fromAsset('model.tflite', options: options
 | XNNPACK | Android, iOS, macOS, Windows, Linux | CPU (optimized SIMD) | `XNNPackDelegate` |
 | Metal | iOS, macOS (arm64 only on macOS) | GPU (Metal) | `GpuDelegate` |
 | CoreML | iOS, macOS (arm64 only on macOS) | Neural Engine / GPU / CPU | `CoreMlDelegate` |
-| Flex | iOS, macOS, Windows, Linux | CPU (TensorFlow ops) | `FlexDelegate` |
+| Flex (deprecated, removed in 5.0.0) | iOS, macOS, Windows, Linux | CPU (TensorFlow ops) | `FlexDelegate` |
 
 Android has no Interpreter GPU delegate and no Flex delegate since 4.0.0, because LiteRT 2.x provides neither. For the GPU on Android, use [`CompiledModel`](#compiledmodel-litert-next) with `Accelerator.gpu`.
+
+`FlexDelegate` is deprecated since 4.1.2: Google no longer supports the Flex delegate for running legacy TensorFlow ops ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458)). Convert the model to builtin LiteRT ops. It keeps working on iOS, macOS, Linux, and Windows in 4.x and will be removed in 5.0.0. See [FlexDelegate (deprecated)](#flexdelegate-for-complex-model-training).
 
 #### XNNPACK (all native platforms)
 
@@ -947,8 +949,8 @@ CoreML delegate options:
 
 Two persistence approaches are supported:
 
-1. **Lightweight (`get_weights`/`set_weights`)**: Weights are extracted via builtin ops and serialized in Dart. Works with the standard bundled native runtime, no Flex delegate or extra downloads required.
-2. **Checkpoint-based (`save`/`restore`)**: Google's standard approach using `tf.raw_ops.SaveV2`/`RestoreV2` with `SELECT_TF_OPS`. Writes TensorFlow checkpoint files directly from the model. Requires the [Flex delegate](#flexdelegate-for-complex-model-training), so it is not available on Android since 4.0.0.
+1. **Lightweight (`get_weights`/`set_weights`)**: Weights are extracted via builtin ops and serialized in Dart. Works with the standard bundled native runtime, no Flex delegate or extra downloads required. This is the recommended approach.
+2. **Checkpoint-based (`save`/`restore`), deprecated**: Uses `tf.raw_ops.SaveV2`/`RestoreV2` with `SELECT_TF_OPS` to write TensorFlow checkpoint files directly from the model. Requires the [Flex delegate](#flexdelegate-for-complex-model-training), which is deprecated since 4.1.2 and will be removed in 5.0.0, and it is not available on Android since 4.0.0. Use `get_weights`/`set_weights` for new models.
 
 #### Lightweight persistence (get_weights/set_weights)
 
@@ -1079,7 +1081,9 @@ for (var i = 0; i < count; i++) {
 
 #### Checkpoint-based persistence (save/restore)
 
-Google's standard approach to on-device training persistence uses `tf.raw_ops.SaveV2` and `tf.raw_ops.RestoreV2` with `SELECT_TF_OPS`. This writes TensorFlow checkpoint files (`.index` + `.data-00000-of-00001`) directly from the model. This approach requires the Flex delegate, which runs on iOS, macOS, Linux, and Windows but not on Android since 4.0.0.
+> **Deprecated.** This approach needs the Flex delegate, which Google no longer supports ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458)). `FlexDelegate` is deprecated since 4.1.2 and will be removed in 5.0.0. For new models, export builtin-op `get_weights`/`set_weights` signatures and use [lightweight persistence](#lightweight-persistence-get_weightsset_weights) (for example with `ModelCheckpoint`) instead.
+
+This approach uses `tf.raw_ops.SaveV2` and `tf.raw_ops.RestoreV2` with `SELECT_TF_OPS`. It writes TensorFlow checkpoint files (`.index` + `.data-00000-of-00001`) directly from the model. It requires the Flex delegate, which runs on iOS, macOS, Linux, and Windows in 4.x but not on Android since 4.0.0.
 
 ##### Preparing a save/restore model (Python)
 
@@ -1155,7 +1159,8 @@ See `scripts/generate_training_model_flex.py` for a complete working example.
 ##### Save/restore in Dart
 
 ```dart
-// Requires flutter_litert_flex in pubspec.yaml (iOS, macOS, Windows, Linux)
+// Requires flutter_litert_flex in pubspec.yaml (iOS, macOS, Windows, Linux).
+// FlexDelegate is deprecated and will be removed in 5.0.0.
 final flex = await FlexDelegate.create();
 final options = InterpreterOptions();
 options.addDelegate(flex);
@@ -1199,12 +1204,15 @@ restore.close();
 | **Platforms** | All native platforms | iOS, macOS, Linux, Windows (not Android) |
 | **File format** | JSON, `.flwt`, or any Dart serialization | TF checkpoint (`.index` + `.data`) |
 | **Ops required** | `TFLITE_BUILTINS` only | `SELECT_TF_OPS` |
-| **Best for** | Simple models, size-constrained apps | Google-standard models, complex architectures |
+| **Status** | Recommended | Deprecated, removed in 5.0.0 |
+| **Best for** | New models, size-constrained apps | Existing `SaveV2`/`RestoreV2` models until they are converted |
 | **Model prep** | `get_weights`/`set_weights` signatures | `save`/`restore` signatures with `tf.raw_ops.SaveV2`/`RestoreV2` |
 
 #### FlexDelegate for complex model training
 
-The weight persistence approach above works with models whose training graph uses only TFLite builtins. However, training models with layers like `Conv2D` or `BatchNormalization` can generate gradient ops (e.g., `Conv2DBackpropFilter`) that require `SELECT_TF_OPS`. For these models, you need the **Flex delegate**, a separate native package whose library size depends on the platform. The Flex delegate is not deprecated, and it is supported on iOS, macOS, Linux, and Windows.
+> **Deprecated since 4.1.2, removed in 5.0.0.** Google no longer supports the Flex delegate for running legacy TensorFlow ops ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458)) and no longer updates its tooling ([google-ai-edge/LiteRT#3273](https://github.com/google-ai-edge/LiteRT/issues/3273)). Google's guidance is to convert the model to standard LiteRT ops. `FlexDelegate` still works in 4.x on the platforms below, and using it now shows a deprecation warning. Plan the migration before 5.0.0.
+
+The weight persistence approach above works with models whose training graph uses only TFLite builtins. Training models with layers like `Conv2D` or `BatchNormalization` can generate gradient ops (e.g., `Conv2DBackpropFilter`) that need `SELECT_TF_OPS`. Those models run only with the **Flex delegate**, a separate native package whose library size depends on the platform, supported on iOS, macOS, Linux, and Windows.
 
 > **Not on Android since 4.0.0.** LiteRT 2.x has no flex delegate (Select TF ops) for Android. There, `FlexDelegate.isAvailable` is false, `FlexDelegate()` and `FlexDelegate.create()` throw an `UnsupportedError`, and an Android build that includes `flutter_litert_flex` fails with a message saying so. For Android, reconvert the model to LiteRT built-in ops, or stay on `flutter_litert` 3.10.x with `flutter_litert_flex` 1.3.0.
 

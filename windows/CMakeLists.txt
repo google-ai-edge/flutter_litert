@@ -80,7 +80,7 @@ set(FLUTTER_LITERT_VCRUNTIME_THREADS_DLL "${CMAKE_CURRENT_SOURCE_DIR}/vcruntime1
 # pinned hash. dxcompiler.dll and dxil.dll are the same files as in the
 # litert-desktop-gpu-v1.0.0 release.
 set(FLUTTER_LITERT_GPU_LIBS_URL
-  "https://github.com/hugocornellier/flutter_litert/releases/download/litert-desktop-gpu-v2.3.0")
+  "https://github.com/google-ai-edge/flutter_litert/releases/download/litert-desktop-gpu-v2.3.0")
 
 function(flutter_litert_fetch_lib path url sha)
   # A file left by an older flutter_litert (a different pinned version) is

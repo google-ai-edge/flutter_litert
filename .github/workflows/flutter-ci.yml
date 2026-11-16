@@ -8,6 +8,9 @@ on:
       - compiled-model
       - fix/wasm-ready-3.2.0
 
+permissions:
+  contents: read
+
 # One Flutter version for every job, so a new stable release cannot change CI
 # between two runs of the same commit: Flutter 3.50.0 (2026-11-11) needed
 # AGP 9 and Gradle 9 changes before CI passed again. Raise it on purpose, in a
@@ -24,8 +27,10 @@ jobs:
     # Takes 17 minutes, 23 at most in 83 runs.
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -63,7 +68,7 @@ jobs:
       # the flex version, so the key follows it; a stale entry is harmless
       # because SwiftPM checks the checksum.
       - name: Cache FlexDelegate library (macOS)
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/Library/Caches/org.swift.swiftpm/artifacts
           key: flex-delegate-macos-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
@@ -118,8 +123,10 @@ jobs:
     # Takes 8 minutes, 18 at most in 82 runs.
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -171,7 +178,7 @@ jobs:
           echo "path=$root/linux/libtensorflowlite_flex-linux.so" >> "$GITHUB_OUTPUT"
 
       - name: Cache FlexDelegate library (Linux)
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ steps.flex-linux.outputs.path }}
           key: flex-delegate-linux-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
@@ -202,8 +209,10 @@ jobs:
     # Takes 11 minutes, 13 at most in 77 runs.
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -260,8 +269,10 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -299,7 +310,7 @@ jobs:
           PY
 
       - name: Cache FlexDelegate library (Windows)
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ steps.flex-windows.outputs.path }}
           key: flex-delegate-windows-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
@@ -321,7 +332,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Verify published iOS frameworks carry the Core ML NPU entry points
         run: ./scripts/verify_published_ios_frameworks.sh
 
@@ -329,8 +342,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -360,6 +375,8 @@ jobs:
           test/litertjs_multi_input_web_test.dart
           test/web_detector_utils_web_test.dart
           test/litert_web_loader_test.dart
+          test/litert_web_loader_retry_web_test.dart
+          test/script_loader_web_test.dart
           test/util/camera_frame_prepare_test.dart
           test/util/camera_frame_test.dart
           test/util/yuv_conversion_test.dart
@@ -424,8 +441,10 @@ jobs:
     # the 6 hour limit.
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -447,7 +466,7 @@ jobs:
       # Maven Central directly instead of through the plugin portal's redirect,
       # which answered 429 or served nothing in two runs on 2026-11-12.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -482,7 +501,7 @@ jobs:
       # again, so a flaky test shows up red here instead of hiding behind a
       # retry.
       - name: Run integration tests (Android emulator)
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           arch: x86_64
@@ -506,7 +525,7 @@ jobs:
       # did while flutter test was silent.
       - name: Upload Android test logs
         if: failure() || cancelled()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
           path: build/android-test-logs/
@@ -539,8 +558,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
           df -h /
 
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -555,7 +576,7 @@ jobs:
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
       # Gradle plugins from Maven Central directly, explained at build-android.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -615,8 +636,10 @@ jobs:
     # Takes 7 minutes, 9 at most in 39 runs.
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -631,7 +654,7 @@ jobs:
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
       # Gradle plugins from Maven Central directly, explained at build-android.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -654,7 +677,7 @@ jobs:
 
       # No launch or test is tried again, as in build-android.
       - name: Run the no Play services integration test (Android emulator)
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           target: default
@@ -676,7 +699,7 @@ jobs:
       # did while flutter test was silent.
       - name: Upload Android test logs
         if: failure() || cancelled()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
           path: build/android-test-logs/
@@ -696,15 +719,17 @@ jobs:
     # Takes 4 minutes, 7 at most in 86 runs.
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
           cache: gradle
       # Gradle plugins from Maven Central directly, explained at build-android.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -781,8 +806,10 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}

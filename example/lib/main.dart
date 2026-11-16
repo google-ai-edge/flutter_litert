@@ -3,7 +3,7 @@
 // If you are copying this file from pub.dev, clone the full repo and run
 // the app from the example/ subdirectory so that the assets are available:
 //
-//   git clone https://github.com/hugocornellier/flutter_litert
+//   git clone https://github.com/google-ai-edge/flutter_litert
 //   cd flutter_litert/example
 //   flutter run
 

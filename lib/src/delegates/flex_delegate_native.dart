@@ -32,9 +32,18 @@ const String _androidRemovedMessage =
 
 /// Flex delegate for running models that use `SELECT_TF_OPS`.
 ///
+/// Deprecated: Google no longer supports the Flex delegate for running legacy
+/// TensorFlow ops
+/// ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458)).
+/// Convert the model to builtin LiteRT ops instead. For on-device training,
+/// persist weights with builtin-op `get_weights`/`set_weights` signatures (see
+/// `ModelCheckpoint`) rather than `SaveV2`/`RestoreV2` checkpoints.
+/// [FlexDelegate] still works on the platforms below in 4.x and will be
+/// removed in flutter_litert 5.0.0.
+///
 /// The Flex delegate enables TensorFlow operations that are not available as
-/// TFLite builtins. This is required for training models whose gradient ops
-/// cannot be expressed as builtins (e.g., Conv2D, BatchNormalization).
+/// TFLite builtins, such as the gradient ops of some training graphs (e.g.,
+/// Conv2D, BatchNormalization).
 ///
 /// Supported on iOS, macOS, Linux and Windows. Not on Android: Android flex
 /// was removed in flutter_litert 4.0.0 because LiteRT 2.x has no flex
@@ -61,6 +70,11 @@ const String _androidRemovedMessage =
 /// options.addDelegate(flex);
 /// final interpreter = Interpreter.fromFile(model, options: options);
 /// ```
+@Deprecated(
+  'Google no longer supports the Flex delegate (google-ai-edge/LiteRT#6458). '
+  'Convert the model to builtin LiteRT ops instead. '
+  'FlexDelegate will be removed in flutter_litert 5.0.0.',
+)
 class FlexDelegate implements Delegate {
   static DynamicLibrary? _flexLib;
 

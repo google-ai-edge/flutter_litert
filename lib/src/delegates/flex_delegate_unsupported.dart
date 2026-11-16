@@ -15,6 +15,16 @@
  */
 
 /// FlexDelegate (unsupported platform)
+///
+/// Deprecated: Google no longer supports the Flex delegate
+/// ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458)).
+/// Convert the model to builtin LiteRT ops instead. It will be removed in
+/// flutter_litert 5.0.0.
+@Deprecated(
+  'Google no longer supports the Flex delegate (google-ai-edge/LiteRT#6458). '
+  'Convert the model to builtin LiteRT ops instead. '
+  'FlexDelegate will be removed in flutter_litert 5.0.0.',
+)
 class FlexDelegate {
   FlexDelegate() {
     throw UnsupportedError('FlexDelegate is not supported on this platform');

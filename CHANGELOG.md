@@ -1,3 +1,49 @@
+## 4.1.2
+
+The repository moved to
+[google-ai-edge/flutter_litert](https://github.com/google-ai-edge/flutter_litert),
+`FlexDelegate` is deprecated, and the web runtimes retry a file that fails to
+load from the CDN.
+
+### Deprecated
+
+* `FlexDelegate` is deprecated and will be removed in 5.0.0. Google no longer
+  supports the Flex delegate for running legacy TensorFlow ops
+  ([google-ai-edge/LiteRT#6458](https://github.com/google-ai-edge/LiteRT/issues/6458))
+  and no longer updates its tooling
+  ([google-ai-edge/LiteRT#3273](https://github.com/google-ai-edge/LiteRT/issues/3273)).
+  Convert the model to builtin LiteRT ops. For on-device training, persist
+  weights with builtin-op `get_weights`/`set_weights` signatures (for example
+  with `ModelCheckpoint`) instead of `SaveV2`/`RestoreV2` checkpoints.
+  `FlexDelegate` and `flutter_litert_flex` 2.1.x keep working on iOS, macOS,
+  Linux, and Windows in 4.x; code that uses `FlexDelegate` now gets a
+  deprecation warning from the analyzer.
+
+### Web
+
+* The web runtimes retry a file that fails to load, up to 3 tries with a 1 s
+  and then 2 s wait, before they fail as before. jsDelivr, the default host,
+  briefly answers HTTP 503 when it cannot reach its origin, and one such
+  response used to fail the whole load:
+  * `initializeWeb()` retries each tflite-js script (`tf-core.js`,
+    `tf-backend-cpu.js`, `tf-tflite.min.js`) before it throws
+    `Failed to load script`.
+  * The LiteRT.js auto-loader retries the `@litertjs/core` module and its WASM
+    files before `CompiledModel` and `LiteRtInterpreter` report
+    `LiteRT.js failed to initialize`.
+  * The WASM files that tflite-js then loads by itself are not retried:
+    tflite-js keeps a failed load for the life of the page.
+
+### Repository
+
+* The package homepage and repository links, the podspec homepages, and the
+  URLs of the native libraries fetched at build time (iOS frameworks, Linux
+  and Windows GPU accelerator libraries) now point to
+  `github.com/google-ai-edge/flutter_litert`. The files and their SHA-256 pins
+  are unchanged. Earlier versions keep working: GitHub redirects the old
+  `github.com/hugocornellier/flutter_litert` URLs, release downloads included,
+  to the new location.
+
 ## 4.1.1
 
 Fixes the iOS and macOS `Interpreter` slowdown with the XNNPACK delegate that

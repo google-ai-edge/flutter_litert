@@ -40,6 +40,9 @@ name: device tests (manual)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   FLUTTER_VERSION: '3.50.0'
 
@@ -58,8 +61,10 @@ jobs:
     # A stall must end here, not at the 6 hour limit.
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -76,7 +81,7 @@ jobs:
       # Gradle plugins from Maven Central directly, explained at build-android
       # in flutter-ci.yml.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -108,7 +113,7 @@ jobs:
       - name: Run integration tests (Android 7.0 emulator)
         id: emulator
         continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: &api24-emulator-with
           api-level: 24
           target: google_apis
@@ -135,19 +140,21 @@ jobs:
       - name: Run integration tests (Android 7.0 emulator), second emulator start
         id: emulator_retry
         if: steps.emulator_start.outputs.retry == 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: *api24-emulator-with
       - name: Fail the job when the emulator step failed
         if: steps.emulator.outcome == 'failure' && steps.emulator_retry.outcome != 'success'
+        env:
+          EMULATOR_RETRY: ${{ steps.emulator_start.outputs.retry }}
         run: |
-          echo "::error::the Android emulator step failed (retry fired: ${{ steps.emulator_start.outputs.retry }})"
+          echo "::error::the Android emulator step failed (retry fired: ${EMULATOR_RETRY})"
           exit 1
 
       # Kept when the job did not pass or an attempt had to be run again: the
       # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
         if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
           path: build/android-test-logs/
@@ -175,8 +182,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
           df -h /
 
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -193,7 +202,7 @@ jobs:
       # Gradle plugins from Maven Central directly, explained at build-android
       # in flutter-ci.yml.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -258,7 +267,7 @@ jobs:
       - name: Run Play services runtime integration tests (Android emulator)
         id: emulator
         continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env: &play-services-emulator-env
           # The debug APK of the host from the step above, later the one the
           # first test built: the script installs it before each flutter
@@ -357,13 +366,15 @@ jobs:
       - name: Run Play services runtime integration tests (Android emulator), second emulator start
         id: emulator_retry
         if: steps.emulator_start.outputs.retry == 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env: *play-services-emulator-env
         with: *play-services-emulator-with
       - name: Fail the job when the emulator step failed
         if: steps.emulator.outcome == 'failure' && steps.emulator_retry.outcome != 'success'
+        env:
+          EMULATOR_RETRY: ${{ steps.emulator_start.outputs.retry }}
         run: |
-          echo "::error::the Android emulator step failed (retry fired: ${{ steps.emulator_start.outputs.retry }})"
+          echo "::error::the Android emulator step failed (retry fired: ${EMULATOR_RETRY})"
           exit 1
 
       # The keystore step above exists to stop this; the watchdog rerun would
@@ -380,7 +391,7 @@ jobs:
       # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
         if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
           path: build/android-test-logs/
@@ -393,8 +404,10 @@ jobs:
     # This outer cap only bounds the complete four-test sequence.
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}

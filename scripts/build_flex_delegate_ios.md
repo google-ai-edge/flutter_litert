@@ -22,7 +22,7 @@ Slices: `ios-arm64` and `ios-arm64-simulator`. There is no x86_64 simulator slic
 ## Run the workflow
 
 ```bash
-gh workflow run build-flex-ios.yml --repo hugocornellier/flutter_litert --ref <branch>
+gh workflow run build-flex-ios.yml --repo google-ai-edge/flutter_litert --ref <branch>
 ```
 
 Optional inputs `tflc_spm_url` and `tflc_spm_sha256` pick the `TensorFlowLiteC` SPM xcframework that the verify step links against (default: the `flex-v1.1.1` one). Point them at the matching TFLite C build to check the pair.

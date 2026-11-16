@@ -25,7 +25,7 @@ on:
       tflc_spm_url:
         description: 'TensorFlowLiteC SPM xcframework zip for the link test'
         required: false
-        default: 'https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteC-spm.xcframework.zip'
+        default: 'https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteC-spm.xcframework.zip'
       tflc_spm_sha256:
         description: 'sha256 of tflc_spm_url'
         required: false
@@ -48,9 +48,9 @@ env:
   FLEX_REPO_COMMIT: af65014505cc1fd0b0e959de0dfaf86c170b6239
   PREPROCESS_SHA256: 5fa7fcfcd6591109d326188f6a5ecaf7f26c67bf2c096a82cfcbdf43dc4a3a04
   # Previous release (TF 2.20.0) for the comparisons.
-  REF_RAW_URL: https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.0.0/TensorFlowLiteFlex-ios.xcframework.zip
+  REF_RAW_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.0.0/TensorFlowLiteFlex-ios.xcframework.zip
   REF_RAW_SHA256: b06e5e793e45d923cc6757f3af3562259883e0b5b1292f456ced416bc47edee8
-  REF_SPM_URL: https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteFlex-spm.xcframework.zip
+  REF_SPM_URL: https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteFlex-spm.xcframework.zip
   REF_SPM_SHA256: 7815ab08883f04e94225ab7d0c4af0d5ee6c60c86e587491ec8361c5d0728c9f
 
 jobs:
@@ -68,13 +68,15 @@ jobs:
           - slice: ios-arm64-simulator
             cpu: ios_sim_arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Free disk space
         run: bash scripts/flex/free_macos_runner_disk.sh
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
 
@@ -126,12 +128,15 @@ jobs:
         run: bash scripts/flex/seed_bazel_repo_cache.sh "$HOME/bazel-repo-cache"
 
       - name: Build TensorFlowLiteFlex_framework (${{ matrix.cpu }})
+        env:
+          MATRIX_CPU: ${{ matrix.cpu }}
+          MATRIX_SLICE: ${{ matrix.slice }}
         run: |
           cd "$HOME/tf-src"
           bazelisk build -c opt \
             --repository_cache="$HOME/bazel-repo-cache" \
             --config=ios \
-            --cpu=${{ matrix.cpu }} \
+            --cpu=${MATRIX_CPU} \
             --repo_env=HERMETIC_PYTHON_VERSION=3.11 \
             --local_ram_resources=HOST_RAM*0.7 \
             --jobs=4 \
@@ -139,12 +144,12 @@ jobs:
             //tensorflow/lite/ios:TensorFlowLiteFlex_framework
           mkdir -p "$RUNNER_TEMP/out"
           cp bazel-bin/tensorflow/lite/ios/TensorFlowLiteFlex_framework.zip \
-            "$RUNNER_TEMP/out/TensorFlowLiteFlex_framework-${{ matrix.slice }}.zip"
+            "$RUNNER_TEMP/out/TensorFlowLiteFlex_framework-${MATRIX_SLICE}.zip"
           ls -l "$RUNNER_TEMP/out"
           df -h /
 
       - name: Upload slice
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flex-ios-slice-${{ matrix.slice }}
           path: ${{ runner.temp }}/out/TensorFlowLiteFlex_framework-${{ matrix.slice }}.zip
@@ -159,13 +164,15 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 240
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Free disk space
         run: bash scripts/flex/free_macos_runner_disk.sh
 
       - name: Download slices
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: flex-ios-slice-*
           path: ${{ runner.temp }}/slices
@@ -204,7 +211,7 @@ jobs:
           df -h /
 
       - name: Upload raw xcframework
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteFlex-ios-xcframework
           path: |
@@ -215,7 +222,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload SPM xcframework
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: TensorFlowLiteFlex-spm-xcframework
           path: |
@@ -227,7 +234,7 @@ jobs:
 
       - name: Verify
         env:
-          TFLC_SPM_URL: ${{ github.event.inputs.tflc_spm_url || 'https://github.com/hugocornellier/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteC-spm.xcframework.zip' }}
+          TFLC_SPM_URL: ${{ github.event.inputs.tflc_spm_url || 'https://github.com/google-ai-edge/flutter_litert/releases/download/flex-v1.1.1/TensorFlowLiteC-spm.xcframework.zip' }}
           TFLC_SPM_SHA256: ${{ github.event.inputs.tflc_spm_sha256 || '18701b6fdf438394dcacf0ed2d0412eefcd59f70db7a10ead5b8b68dbbc0b382' }}
         run: |
           bash scripts/flex/verify_flex_ios.sh \
@@ -237,7 +244,7 @@ jobs:
 
       - name: Upload verification report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flex-ios-verify-report
           path: report
