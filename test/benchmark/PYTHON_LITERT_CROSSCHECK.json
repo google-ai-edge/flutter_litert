@@ -3177,7 +3177,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/face_blendshapes",
@@ -3185,7 +3185,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/face_blendshapes",
@@ -3193,7 +3193,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/face_detection_back",
@@ -5553,7 +5553,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/face_detection_full_range_sparse",
@@ -5561,7 +5561,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/face_detection_full_range_sparse",
@@ -7916,7 +7916,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/mobilefacenet",
@@ -7924,7 +7924,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "face_detection_tflite/mobilefacenet",
@@ -14476,7 +14476,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "hand_detection/gesture_embedder",
@@ -14484,7 +14484,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "hand_detection/gesture_embedder",
@@ -14492,7 +14492,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "hand_detection/hand_detection",
@@ -16504,7 +16504,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/species_classifier_float16",
@@ -16512,7 +16512,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/species_classifier_float16",
@@ -16932,7 +16932,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/superanimal_rtmpose_s_float16",
@@ -16940,7 +16940,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/superanimal_rtmpose_s_float16",
@@ -18476,7 +18476,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/superanimal_ssdlite_float16",
@@ -18484,7 +18484,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "animal_detection/superanimal_ssdlite_float16",
@@ -19116,7 +19116,7 @@
       "status": "error",
       "error": "CompiledModel error: code=3, message=Failed to invoke the compiled model",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 288, in run_compiled\n    model.run_by_index(signature_index, in_buffers, out_buffers)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 421, in run_by_index\n    self._model.RunByIndex(signature_index, input_capsules, output_capsules)\nRuntimeError: CompiledModel error: code=3, message=Failed to invoke the compiled model\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 288, in run_compiled\n    model.run_by_index(signature_index, in_buffers, out_buffers)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 421, in run_by_index\n    self._model.RunByIndex(signature_index, input_capsules, output_capsules)\nRuntimeError: CompiledModel error: code=3, message=Failed to invoke the compiled model\n"
     },
     {
       "model": "cat_detection/cat_face_landmarks_full",
@@ -19124,7 +19124,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "cat_detection/cat_face_landmarks_full",
@@ -19132,7 +19132,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "cat_detection/cat_face_landmarks_full",
@@ -19140,7 +19140,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "cat_detection/cat_face_localizer",
@@ -19376,7 +19376,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "cat_detection/cat_face_localizer",
@@ -19384,7 +19384,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "cat_detection/cat_face_localizer",
@@ -19392,7 +19392,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_landmarks_full",
@@ -19552,7 +19552,7 @@
       "status": "error",
       "error": "CompiledModel error: code=3, message=Failed to invoke the compiled model",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 288, in run_compiled\n    model.run_by_index(signature_index, in_buffers, out_buffers)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 421, in run_by_index\n    self._model.RunByIndex(signature_index, input_capsules, output_capsules)\nRuntimeError: CompiledModel error: code=3, message=Failed to invoke the compiled model\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 288, in run_compiled\n    model.run_by_index(signature_index, in_buffers, out_buffers)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 421, in run_by_index\n    self._model.RunByIndex(signature_index, input_capsules, output_capsules)\nRuntimeError: CompiledModel error: code=3, message=Failed to invoke the compiled model\n"
     },
     {
       "model": "dog_detection/dog_face_landmarks_full",
@@ -19560,7 +19560,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_landmarks_full",
@@ -19568,7 +19568,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_landmarks_full",
@@ -19576,7 +19576,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_localizer",
@@ -19812,7 +19812,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_localizer",
@@ -19820,7 +19820,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "dog_detection/dog_face_localizer",
@@ -19828,7 +19828,7 @@
       "status": "error",
       "error": "ERROR: [./litert/cc/litert_compiled_model.h:1487]",
       "error_type": "RuntimeError",
-      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"/private/tmp/claude-501/-Users-<user>-IdeaProjects-flutter-litert/320da95b-525b-4dae-b655-f4c6bbbb2622/scratchpad/litert-venv/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
+      "traceback": "Traceback (most recent call last):\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 495, in main\n    outs, samples, accelerated = run_compiled(path, chosen, **kwargs)\n  File \"<home>/IdeaProjects/flutter_litert/test/benchmark/python_litert_crosscheck.py\", line 258, in run_compiled\n    model = CompiledModel.from_file(path, options=options)\n  File \"<venv>/lib/python3.10/site-packages/ai_edge_litert/compiled_model.py\", line 150, in from_file\n    ptr = _cm.CreateCompiledModelFromFile(\nRuntimeError: ERROR: [./litert/cc/litert_compiled_model.h:1487]\n"
     },
     {
       "model": "object_detection/efficientdet_lite0",
