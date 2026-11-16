@@ -17,7 +17,7 @@ import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
-group = "com.hugocornellier.flutter_litert"
+group = "com.google.ai.edge.flutter_litert"
 version = "1.0"
 
 buildscript {
@@ -84,7 +84,7 @@ val playServicesLitertVersion = "17.0.0"
 
 android {
     compileSdk = 36
-    namespace = "com.hugocornellier.flutter_litert"
+    namespace = "com.google.ai.edge.flutter_litert"
 
     externalNativeBuild {
         cmake {

@@ -1,4 +1,4 @@
-package com.hugocornellier.flutter_litert
+package com.google.ai.edge.flutter_litert
 
 import android.content.Context
 import android.os.Handler

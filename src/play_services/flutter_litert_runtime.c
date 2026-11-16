@@ -131,7 +131,7 @@ FLUTTER_LITERT_EXPORT const char* FlutterLiteRtRuntimeGpuError(void) {
 }
 
 JNIEXPORT void JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState(
     JNIEnv* env, jclass clazz, jint state, jstring error) {
   (void)clazz;
   pthread_mutex_lock(&g_lock);
@@ -289,7 +289,7 @@ static const char* attach(JNIEnv* env, jobject handle, char* error,
 // description of the failure. A failed attach can be retried. [gpu_error] is
 // why the runtime would have no GPU accelerator, kept for the process.
 JNIEXPORT jstring JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel(
     JNIEnv* env, jclass clazz, jobject handle, jstring gpu_error) {
   (void)clazz;
   char error[FLUTTER_LITERT_ERROR_SIZE];
@@ -316,7 +316,7 @@ Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeAttachCompiled
 }
 
 JNIEXPORT void JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure(
     JNIEnv* env, jclass clazz, jstring error) {
   (void)clazz;
   pthread_mutex_lock(&g_lock);

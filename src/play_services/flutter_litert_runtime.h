@@ -48,15 +48,15 @@ FLUTTER_LITERT_EXPORT const void* FlutterLiteRtRuntimeApi(void);
 FLUTTER_LITERT_EXPORT const void* FlutterLiteRtRuntimeGpuAccelerator(void);
 FLUTTER_LITERT_EXPORT const void* FlutterLiteRtRuntimeContext(void);
 
-// Called by com.hugocornellier.flutter_litert.PlayServicesRuntime.
+// Called by com.google.ai.edge.flutter_litert.PlayServicesRuntime.
 JNIEXPORT void JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState(
     JNIEnv* env, jclass clazz, jint state, jstring error);
 JNIEXPORT jstring JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel(
     JNIEnv* env, jclass clazz, jobject handle, jstring gpu_error);
 JNIEXPORT void JNICALL
-Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure(
+Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure(
     JNIEnv* env, jclass clazz, jstring error);
 
 #ifdef __cplusplus

@@ -51,7 +51,7 @@ cat > "$FW/Versions/A/Resources/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.hugocornellier.flutter-litert-flex</string>
+	<string>com.google.ai.edge.flutter-litert-flex</string>
 	<key>CFBundleName</key>
 	<string>flutter_litert_flex</string>
 	<key>CFBundlePackageType</key>

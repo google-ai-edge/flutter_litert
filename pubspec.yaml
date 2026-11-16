@@ -36,7 +36,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.hugocornellier.flutter_litert
+        package: com.google.ai.edge.flutter_litert
         pluginClass: FlutterLitertPlugin
         ffiPlugin: true
       ios:

@@ -8,7 +8,7 @@ plugins {
 val testLabAbi = providers.gradleProperty("flutterLitert.testLabAbi").orNull
 
 android {
-    namespace = "com.hugocornellier.flutter_litert_play_services_test_host"
+    namespace = "com.google.ai.edge.flutter_litert_play_services_test_host"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -18,7 +18,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.hugocornellier.flutter_litert_play_services_test_host"
+        applicationId = "com.google.ai.edge.flutter_litert_play_services_test_host"
         // play-services-litert requires API 24.
         minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion

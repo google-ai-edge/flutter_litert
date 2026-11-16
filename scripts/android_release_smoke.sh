@@ -10,7 +10,7 @@ set -u
 apk=$1
 serial=${2:-emulator-5554}
 limit=${3:-600}
-app=com.hugocornellier.flutter_litert_play_services_test_host
+app=com.google.ai.edge.flutter_litert_play_services_test_host
 marker='flutter_litert release smoke: '
 
 adb -s "$serial" install -r "$apk" || exit 1

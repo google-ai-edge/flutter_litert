@@ -347,7 +347,7 @@ jobs:
             storeoff;
             env ANDROID_TEST_ATTEMPTS=2 bash ../../scripts/android_flutter_test.sh integration_test/play_services_runtime_test.dart --timeout 900s || exit 1;
             bash ../../scripts/android_release_smoke.sh build/app/outputs/flutter-apk/app-release.apk emulator-5554 600 &&
-            adb -s emulator-5554 uninstall com.hugocornellier.flutter_litert_play_services_test_host &&
+            adb -s emulator-5554 uninstall com.google.ai.edge.flutter_litert_play_services_test_host &&
             env ORG_GRADLE_PROJECT_flutterLitert.runtime=auto ANDROID_TEST_ATTEMPT_LIMIT=900 bash ../../scripts/android_flutter_test.sh integration_test/auto_runtime_test.dart --dart-define=FLUTTER_LITERT_EXPECT_RUNTIME=playServices --timeout 600s &&
             python3 -I ../../scripts/check_android_runtime_apk.py --runtime auto build/app/outputs/flutter-apk/app-debug.apk &&
             env ORG_GRADLE_PROJECT_flutterLitert.runtime=auto flutter build apk --release -t lib/release_smoke.dart --dart-define=FLUTTER_LITERT_EXPECT_RUNTIME=playServices &&

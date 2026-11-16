@@ -86,12 +86,12 @@ SHIM_EXPORTS = (
     "FlutterLiteRtRuntimeApi",
     "FlutterLiteRtRuntimeGpuAccelerator",
     "FlutterLiteRtRuntimeContext",
-    "Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState",
+    "Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetInterpreterState",
 )
 # JNI entry points only the Play services PlayServicesRuntime.java declares.
 PLAY_SERVICES_SHIM_EXPORTS = (
-    "Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel",
-    "Java_com_hugocornellier_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure",
+    "Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeAttachCompiledModel",
+    "Java_com_google_ai_edge_flutter_1litert_PlayServicesRuntime_nativeSetCompiledModelFailure",
 )
 
 SHT_DYNSYM = 11
