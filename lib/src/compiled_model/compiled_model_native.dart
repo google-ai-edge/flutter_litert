@@ -41,7 +41,6 @@ const int _kLiteRtHwAcceleratorNpu = 4;
 const int _kLiteRtElementTypeFloat32 = 1;
 const int _kLiteRtTensorBufferLockModeRead = 0;
 const int _kLiteRtTensorBufferLockModeWrite = 1;
-const int _kLiteRtDelegatePrecisionFp32 = 2;
 const int _kLiteRtAnySize = 16;
 const int _kLiteRtAnyValueOffset = 8;
 const int _kLiteRtEnvOptionSize = 24;
@@ -240,6 +239,7 @@ class CompiledModel {
         didFallback: didFallback,
         precision: config.precision,
         tensorBufferMode: config.tensorBufferMode,
+        gpuCache: config.gpuCache,
         createModel: (rt, environment) =>
             _createModelFromFile(rt, environment, path),
       ),
@@ -303,6 +303,7 @@ class CompiledModel {
         didFallback: didFallback,
         precision: config.precision,
         tensorBufferMode: config.tensorBufferMode,
+        gpuCache: config.gpuCache,
         createModel: (rt, environment) =>
             _createModelFromBuffer(rt, environment, bytes),
       ),
@@ -425,6 +426,14 @@ class CompiledModel {
     compile,
   }) {
     final primary = config.primaryAccelerators;
+    if (primary.contains(Accelerator.gpu)) {
+      // Invalid cache settings are a caller bug, not a GPU failure: throw
+      // before the CPU fallback could hide them.
+      buildGpuOptionsPayload(
+        precision: config.precision,
+        cache: config.gpuCache,
+      );
+    }
     try {
       return compile(primary, false);
     } catch (error) {
@@ -576,6 +585,7 @@ class CompiledModel {
     required Precision precision,
     required TensorBufferMode tensorBufferMode,
     CompiledModelConfig? requestedConfig,
+    GpuCompilationCache? gpuCache,
     bool didFallback = false,
     required _ModelSource Function(LiteRtBindings rt, Pointer<Void> environment)
     createModel,
@@ -612,9 +622,13 @@ class CompiledModel {
         acceleratorMask = _acceleratorMask(effectiveAccelerators);
       }
       options = _createOptions(rt, acceleratorMask);
-      if (effectiveAccelerators.contains(Accelerator.gpu) &&
-          precision == Precision.fp32) {
-        gpuOptionsIdentifier = _addGpuFp32Options(rt, options);
+      if (effectiveAccelerators.contains(Accelerator.gpu)) {
+        gpuOptionsIdentifier = _addGpuOptions(
+          rt,
+          options,
+          precision: precision,
+          cache: gpuCache,
+        );
       }
       final source = createModel(rt, environment);
       model = source.model;
@@ -1295,9 +1309,59 @@ Pointer<Void> _createOptions(LiteRtBindings rt, int acceleratorMask) {
   }
 }
 
-Pointer<Utf8> _addGpuFp32Options(LiteRtBindings rt, Pointer<Void> options) {
+/// Builds the TOML-style `gpu_options` payload LiteRT parses, or null when no
+/// option needs to be sent (fp16 with no cache).
+///
+/// LiteRT only accepts GPU settings as this text (its GPU option setters are
+/// not exported from the bundled libraries). It strips surrounding quotes but
+/// does not unescape, so quotes and newlines in [cache] values would corrupt
+/// the payload: those throw [ArgumentError]. Exposed for unit tests.
+String? buildGpuOptionsPayload({
+  required Precision precision,
+  GpuCompilationCache? cache,
+}) {
+  final lines = <String>[];
+  if (precision == Precision.fp32) {
+    lines.add('precision = 2'); // LiteRT's fp32 delegate precision value.
+  }
+  if (cache != null) {
+    _checkGpuCacheValue('GpuCompilationCache.directory', cache.directory);
+    _checkGpuCacheValue('GpuCompilationCache.key', cache.key);
+    lines
+      ..add('serialization_dir = "${cache.directory}"')
+      ..add('model_cache_key = "${cache.key}"')
+      ..add('serialize_program_cache = ${cache.programCache}');
+  }
+  if (lines.isEmpty) return null;
+  return '${lines.join('\n')}\n';
+}
+
+void _checkGpuCacheValue(String name, String value) {
+  if (value.isEmpty) {
+    throw ArgumentError.value(value, name, 'must not be empty');
+  }
+  if (RegExp('["\'\r\n]').hasMatch(value)) {
+    throw ArgumentError.value(
+      value,
+      name,
+      'must not contain quotes or newlines',
+    );
+  }
+}
+
+Pointer<Utf8>? _addGpuOptions(
+  LiteRtBindings rt,
+  Pointer<Void> options, {
+  required Precision precision,
+  GpuCompilationCache? cache,
+}) {
+  final text = buildGpuOptionsPayload(precision: precision, cache: cache);
+  if (text == null) return null;
+  if (cache != null) {
+    Directory(cache.directory).createSync(recursive: true);
+  }
   final identifier = 'gpu_options'.toNativeUtf8();
-  final payload = 'precision = $_kLiteRtDelegatePrecisionFp32\n'.toNativeUtf8();
+  final payload = text.toNativeUtf8();
   final opaqueOut = calloc<Pointer<Void>>();
   var payloadTransferred = false;
   var optionsTransferred = false;

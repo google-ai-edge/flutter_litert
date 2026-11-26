@@ -679,6 +679,33 @@ flutterLitert.bundleGpuAccelerator=false
 
 The accelerator adds about 3.3 MB on arm64 or 3.9 MB on x86_64 before APK compression. ABI-split APKs and Play-delivered app bundles normally deliver only the matching ABI. This property affects only the CompiledModel accelerator. The classic Interpreter shares the same `libLiteRt.so` and has no GPU delegate on Android, so it is unaffected.
 
+### GPU kernel cache
+
+By default every `CompiledModel` compiles its GPU kernels again on each load.
+Pass a `GpuCompilationCache` to keep them on disk:
+
+```dart
+final cacheDir = await getApplicationCacheDirectory(); // path_provider
+final model = CompiledModel.fromFileWithConfig(
+  modelPath,
+  config: CompiledModelConfig.gpuWithCpuFallback(
+    gpuCache: GpuCompilationCache(
+      directory: '${cacheDir.path}/litert_gpu',
+      key: 'face_decoder_v3', // change it whenever the model changes
+    ),
+  ),
+);
+```
+
+* Put the directory in the app's cache directory; it is created if missing.
+* The key must identify the exact model: include a model version or content
+  hash, otherwise a changed model may reuse stale entries.
+* `directory` and `key` must not contain quotes or newlines (`ArgumentError`).
+* Only the GPU attempt uses it; the CPU fallback is unaffected. It is
+  ignored for CPU/NPU policies and on the web, and may be ignored by the
+  Play services runtime if it does not forward GPU options.
+* The first load still pays full compile cost and writes the files.
+
 ### CompiledModel on the web
 
 On the web, `CompiledModel` is backed by Google's LiteRT.js runtime: `Accelerator.cpu` maps to the WASM backend and `Accelerator.gpu` to WebGPU. Compilation and inference are Promise-based in the browser, so only the asynchronous API is available there. The async variants also work on native (where they wrap the synchronous path), so portable code should use them:

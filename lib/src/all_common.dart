@@ -9,6 +9,7 @@ export 'compiled_model/compiled_model.dart'
         CompiledModel,
         CompiledModelConfig,
         CompiledModelPolicy,
+        GpuCompilationCache,
         Precision,
         TensorBufferMode;
 export 'compiled_model/compiled_model_selection.dart';

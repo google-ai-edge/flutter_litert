@@ -89,6 +89,55 @@ enum CompiledModelPolicy {
   npuWithCpuFallback,
 }
 
+/// On-disk cache for GPU kernels compiled by LiteRT.
+///
+/// Without it, every [CompiledModel] load recompiles the GPU kernels, which
+/// can take over a second for a small model. With it, later loads of the same
+/// model reuse the serialized programs.
+///
+/// Only native GPU compilation uses this; it is ignored on CPU and NPU, on the
+/// web, and by runtimes that do not forward GPU options (for example the
+/// Play services GPU runtime may not honour it).
+///
+/// Neither [directory] nor [key] may contain quotes or newlines; this is
+/// checked when the model is compiled and throws [ArgumentError].
+class GpuCompilationCache {
+  /// Creates a GPU compilation cache setting.
+  const GpuCompilationCache({
+    required this.directory,
+    required this.key,
+    this.programCache = true,
+  });
+
+  /// Absolute directory that holds the cache files. Created if missing.
+  ///
+  /// Use a directory inside the app's cache directory.
+  final String directory;
+
+  /// Identifies the model in the cache. Change it whenever the model changes,
+  /// for example by including a model version or content hash.
+  final String key;
+
+  /// Whether compiled programs are serialized to [directory].
+  final bool programCache;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GpuCompilationCache &&
+          directory == other.directory &&
+          key == other.key &&
+          programCache == other.programCache;
+
+  @override
+  int get hashCode => Object.hash(directory, key, programCache);
+
+  @override
+  String toString() =>
+      'GpuCompilationCache(directory: $directory, key: $key, '
+      'programCache: $programCache)';
+}
+
 /// Value configuration for policy-based [CompiledModel] construction.
 ///
 /// Use this with `CompiledModel.fromFileWithConfig`,
@@ -120,17 +169,23 @@ class CompiledModelConfig {
   /// Tensor buffer allocation mode.
   final TensorBufferMode tensorBufferMode;
 
+  /// Optional on-disk GPU kernel cache. Ignored when the policy does not use
+  /// the GPU (cpu, npu, npuWithCpuFallback) and on the web.
+  final GpuCompilationCache? gpuCache;
+
   /// Creates a policy-based CompiledModel configuration.
   const CompiledModelConfig({
     this.policy = CompiledModelPolicy.auto,
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
+    this.gpuCache,
   }) : _precision = precision;
 
   /// Package-recommended accelerator selection.
   const CompiledModelConfig.auto({
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
+    this.gpuCache,
   }) : policy = CompiledModelPolicy.auto,
        _precision = precision;
 
@@ -139,12 +194,14 @@ class CompiledModelConfig {
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
   }) : policy = CompiledModelPolicy.cpu,
-       _precision = precision;
+       _precision = precision,
+       gpuCache = null;
 
   /// Strict GPU compilation.
   const CompiledModelConfig.gpu({
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
+    this.gpuCache,
   }) : policy = CompiledModelPolicy.gpu,
        _precision = precision;
 
@@ -152,6 +209,7 @@ class CompiledModelConfig {
   const CompiledModelConfig.gpuWithCpuFallback({
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
+    this.gpuCache,
   }) : policy = CompiledModelPolicy.gpuWithCpuFallback,
        _precision = precision;
 
@@ -160,14 +218,16 @@ class CompiledModelConfig {
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
   }) : policy = CompiledModelPolicy.npu,
-       _precision = precision;
+       _precision = precision,
+       gpuCache = null;
 
   /// NPU-preferred compilation with a complete CPU retry.
   const CompiledModelConfig.npuWithCpuFallback({
     Precision? precision,
     this.tensorBufferMode = TensorBufferMode.managed,
   }) : policy = CompiledModelPolicy.npuWithCpuFallback,
-       _precision = precision;
+       _precision = precision,
+       gpuCache = null;
 
   /// Exact accelerator set used for the policy's first construction attempt.
   Set<Accelerator> get primaryAccelerators => switch (policy) {
@@ -203,11 +263,14 @@ class CompiledModelConfig {
     CompiledModelPolicy? policy,
     Precision? precision,
     TensorBufferMode? tensorBufferMode,
+    GpuCompilationCache? gpuCache,
+    bool clearGpuCache = false,
   }) {
     return CompiledModelConfig(
       policy: policy ?? this.policy,
       precision: precision ?? _precision,
       tensorBufferMode: tensorBufferMode ?? this.tensorBufferMode,
+      gpuCache: clearGpuCache ? null : (gpuCache ?? this.gpuCache),
     );
   }
 
@@ -217,11 +280,13 @@ class CompiledModelConfig {
         other is CompiledModelConfig &&
             policy == other.policy &&
             _precision == other._precision &&
-            tensorBufferMode == other.tensorBufferMode;
+            tensorBufferMode == other.tensorBufferMode &&
+            gpuCache == other.gpuCache;
   }
 
   @override
-  int get hashCode => Object.hash(policy, _precision, tensorBufferMode);
+  int get hashCode =>
+      Object.hash(policy, _precision, tensorBufferMode, gpuCache);
 
   @override
   String toString() {
@@ -232,6 +297,7 @@ class CompiledModelConfig {
     return 'CompiledModelConfig('
         'policy: CompiledModelPolicy.${policy.name}, '
         'precision: $precisionText, '
-        'tensorBufferMode: TensorBufferMode.${tensorBufferMode.name})';
+        'tensorBufferMode: TensorBufferMode.${tensorBufferMode.name}, '
+        'gpuCache: $gpuCache)';
   }
 }
