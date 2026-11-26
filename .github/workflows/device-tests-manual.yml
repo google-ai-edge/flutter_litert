@@ -101,7 +101,11 @@ jobs:
       - name: Download the emulator and its system image
         run: bash scripts/android_sdk_packages.sh 'platforms;android-24' emulator 'system-images;android-24;google_apis;x86_64'
 
-      # The same suites as build-android in flutter-ci.yml, run the same way.
+      # The same suites as build-android in flutter-ci.yml, run the same way,
+      # plus android_gpu_cache_test. Emulators have no working OpenCL, so that
+      # one runs with FLUTTER_LITERT_EXPECT_GPU=false: only its checks that a
+      # bad GpuCompilationCache throws instead of falling back to CPU run here.
+      # Its GPU half needs a physical phone.
       # No ram-size here, unlike the other emulator jobs: with 4096M this image never finished
       # booting (9 of 9 jobs), with the AVD's own 1536M it did (8 of 8).
       #
@@ -127,6 +131,7 @@ jobs:
             touch "$RUNNER_TEMP/emulator-script-started"
             bash ../scripts/android_flutter_test.sh integration_test/compiled_model_test.dart --timeout 600s
             bash ../scripts/android_flutter_test.sh integration_test/interpreter_coexistence_test.dart --timeout 600s
+            bash ../scripts/android_flutter_test.sh integration_test/android_gpu_cache_test.dart --dart-define=FLUTTER_LITERT_EXPECT_GPU=false --timeout 600s
       - name: Check whether the emulator failed before the tests started
         id: emulator_start
         if: steps.emulator.outcome == 'failure'
