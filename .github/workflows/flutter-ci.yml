@@ -89,6 +89,12 @@ jobs:
         working-directory: example
         run: flutter test integration_test/compiled_model_test.dart -d macos --timeout 600s
 
+      # GpuCompilationCache on the real Metal accelerator: the cache files it
+      # writes per key, their reuse, and outputs equal to an uncached load.
+      - name: Run GPU compilation cache integration tests (macOS desktop)
+        working-directory: example
+        run: flutter test integration_test/macos_gpu_cache_test.dart -d macos --timeout 600s
+
       - name: Run Interpreter/CompiledModel coexistence tests (macOS desktop)
         working-directory: example
         run: flutter test integration_test/interpreter_coexistence_test.dart -d macos --timeout 600s
