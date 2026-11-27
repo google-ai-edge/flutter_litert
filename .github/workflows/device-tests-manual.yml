@@ -82,11 +82,9 @@ jobs:
       - uses: ./.github/actions/gradle-plugin-repositories
         with:
           downloads: example
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -226,11 +224,9 @@ jobs:
       - uses: ./.github/actions/gradle-plugin-repositories
         with:
           downloads: play-services-test-host
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install host dependencies
         working-directory: example/play_services_test_host
@@ -436,11 +432,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Select Xcode 16.4
         run: |

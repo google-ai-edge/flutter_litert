@@ -1,0 +1,38 @@
+name: Set up Flutter, trying again once
+description: >-
+  Runs subosito/flutter-action, and once more 30 seconds later when it
+  failed. Its setup script fetches Flutter's release list and SDK with curl,
+  whose retries do not cover a connection that failed to open: a
+  build-android run failed that way in 3 seconds, exit code 7 (2026-11-27).
+  firebase/flutterfire sets Flutter up again the same way.
+inputs:
+  flutter-version:
+    description: The Flutter version, from the stable channel.
+    required: true
+runs:
+  using: composite
+  steps:
+    - id: flutter
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      continue-on-error: true
+      with:
+        channel: 'stable'
+        flutter-version: ${{ inputs.flutter-version }}
+        cache: true
+    # A download that broke off can leave a partial SDK, which the setup
+    # script would take for an installed one.
+    - name: Wait before setting up Flutter again
+      if: steps.flutter.outcome == 'failure'
+      shell: bash
+      env:
+        SDK: ${{ steps.flutter.outputs.CACHE-PATH }}
+      run: |
+        echo "::warning::setting up Flutter failed; trying again in 30 seconds"
+        [ -z "$SDK" ] || rm -rf "$SDK/flutter"
+        sleep 30
+    - if: steps.flutter.outcome == 'failure'
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        channel: 'stable'
+        flutter-version: ${{ inputs.flutter-version }}
+        cache: true
