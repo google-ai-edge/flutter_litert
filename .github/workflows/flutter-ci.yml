@@ -503,11 +503,15 @@ jobs:
       #
       # scripts/android_flutter_test.sh runs each suite: it ends a launch that
       # installs the app and then starts no test, and builds again only when
-      # Gradle's NDK download breaks off. Neither a launch nor a test is tried
-      # again, so a flaky test shows up red here instead of hiding behind a
-      # retry.
+      # Gradle's NDK download breaks off. A launch that started no test is
+      # tried once more, with a warning: on main (45914302334) the app was
+      # installed and the Dart VM came up, but flutter never attached. A test
+      # is not tried again, so a flaky test shows up red here instead of
+      # hiding behind a retry.
       - name: Run integration tests (Android emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        env:
+          ANDROID_TEST_LAUNCH_ATTEMPTS: 2
         with:
           api-level: 34
           arch: x86_64
@@ -527,10 +531,10 @@ jobs:
             bash ../scripts/android_flutter_test.sh integration_test/compiled_model_test.dart --timeout 600s
             bash ../scripts/android_flutter_test.sh integration_test/interpreter_coexistence_test.dart --timeout 600s
 
-      # Kept when the job did not pass: the device log shows what the emulator
-      # did while flutter test was silent.
+      # Kept when the job did not pass or a launch had to be tried again: the
+      # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
-        if: failure() || cancelled()
+        if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
@@ -681,9 +685,11 @@ jobs:
       - name: Download the emulator and its system image
         run: bash scripts/android_sdk_packages.sh emulator 'system-images;android-34;default;x86_64'
 
-      # No launch or test is tried again, as in build-android.
+      # A launch is tried once more and a test is not, as in build-android.
       - name: Run the no Play services integration test (Android emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        env:
+          ANDROID_TEST_LAUNCH_ATTEMPTS: 2
         with:
           api-level: 34
           target: default
@@ -701,10 +707,10 @@ jobs:
             python3 -I ../../scripts/check_android_runtime_apk.py --runtime auto build/app/outputs/flutter-apk/app-release.apk
             bash ../../scripts/android_release_smoke.sh build/app/outputs/flutter-apk/app-release.apk emulator-5554 600
 
-      # Kept when the job did not pass: the device log shows what the emulator
-      # did while flutter test was silent.
+      # Kept when the job did not pass or a launch had to be tried again: the
+      # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
-        if: failure() || cancelled()
+        if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}

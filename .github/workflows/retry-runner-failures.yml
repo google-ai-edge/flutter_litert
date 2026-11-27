@@ -1,7 +1,9 @@
 name: Retry runner failures
 
 # Reruns the `build` workflow only when GitHub failed to provide or keep a machine
-# for a job, the machine ran out of disk, or a download from GitHub failed, so real
+# for a job, the machine ran out of disk, a download from GitHub failed,
+# Flutter's own Gradle build could not get the kotlin-dsl plugin from the plugin
+# portal, or Maven Central turned a Gradle download away with 429, so real
 # failures stay red. Stops after 3 attempts.
 on:
   workflow_run:
@@ -21,7 +23,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Rerun if a job lost its runner or a GitHub download failed
+      - name: Rerun if a job lost its runner or a download failed
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -38,9 +40,17 @@ jobs:
               exit 0
             fi
             # The annotations do not name these failures, so they are found in the job's log.
-            if gh api "repos/$GH_REPO/actions/jobs/$job/logs" 2> /dev/null \
-              | grep -qE 'Server returned HTTP response code: 5[0-9][0-9] for URL: https://github\.com/|flutter_litert: could not download'; then
-              echo "Job $job failed to download from GitHub, rerunning failed jobs."
+            # kotlin-dsl is a plugin of Flutter's own Gradle build (flutter_tools), not of
+            # this repository, and only the plugin portal serves it. It failed 43463814753,
+            # and 45918888991 after Gradle's 10 tries (gradle-plugin-repositories).
+            # Gradle does not try a 429 from Maven Central again; 3 of 40 Android jobs
+            # failed that way within an hour on 2026-11-27.
+            # Job logs hold color codes, and without --allow-escape-sequences the runner's
+            # gh prints nothing for them ("the response contains terminal escape
+            # sequences"), so no log was ever matched.
+            if gh api --allow-escape-sequences "repos/$GH_REPO/actions/jobs/$job/logs" 2> /dev/null \
+              | grep -qE "Server returned HTTP response code: 5[0-9][0-9] for URL: https://github\.com/|flutter_litert: could not download|Plugin \[id: 'org\.gradle\.kotlin\.kotlin-dsl', version: '[0-9.]+'\] was not found|Received status code 429 from server: Too Many Requests"; then
+              echo "Job $job failed a download, rerunning failed jobs."
               gh run rerun "$RUN_ID" --failed
               exit 0
             fi

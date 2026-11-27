@@ -17,11 +17,13 @@
 # Here every attempt has a hard limit, and a watchdog ends an attempt that
 # prints no test line soon after the APK is built. By default nothing is tried
 # again, except a build whose NDK download broke off: a launch failure, a
-# device that was not found and a failed test all fail the script. The push and
-# PR workflow (flutter-ci.yml) runs with these defaults, so a flaky test shows
-# up red instead of passing on a second attempt. ANDROID_TEST_LAUNCH_ATTEMPTS
-# and ANDROID_TEST_ATTEMPTS allow more attempts; only device-tests-manual.yml
-# sets them.
+# device that was not found and a failed test all fail the script.
+# ANDROID_TEST_LAUNCH_ATTEMPTS and ANDROID_TEST_ATTEMPTS allow more attempts.
+# The push and PR workflow (flutter-ci.yml) sets ANDROID_TEST_LAUNCH_ATTEMPTS
+# to 2, since a launch where flutter never attached failed main once
+# (45914302334), and leaves ANDROID_TEST_ATTEMPTS at 1, so a flaky test still
+# shows up red instead of passing on a second attempt. device-tests-manual.yml
+# sets both higher. A launch that was tried again prints a warning.
 #
 # Environment:
 #   ANDROID_TEST_SERIAL           device, default emulator-5554

@@ -26,7 +26,7 @@ name: device tests (manual)
 # The Android jobs set ANDROID_TEST_LAUNCH_ATTEMPTS to 3, which
 # scripts/android_flutter_test.sh used by default before: a launch that
 # installs the app and starts no test, or a device flutter did not find, is
-# tried again up to three times. flutter-ci.yml leaves it at 1.
+# tried again up to three times. flutter-ci.yml sets it to 2.
 #
 # Emulator start retry: the emulator action boots the emulator, sends one
 # screen unlock key with no retry and only then runs `script`. On the Play
@@ -113,10 +113,17 @@ jobs:
       # stopped for good in 12 of 54 jobs, after adb had sent the whole APK;
       # on one core it did in none of 15, and the job takes as long.
       #
-      # The emulator start retry is explained at the top of this file.
+      # The emulator start retry is explained at the top of this file. On this
+      # image an adb call of the action itself (`adb shell input keyevent 82`,
+      # or one `adb shell getprop sys.boot_completed` of its boot poll) never
+      # returned in 2 of 10 jobs (45914213511), and the action puts no limit
+      # on either, so the step ran until the job's own limit and the retry
+      # never came. The step takes 6 to 9 minutes; its own limit fails it
+      # sooner, and with no test started yet the retry then runs.
       - name: Run integration tests (Android 7.0 emulator)
         id: emulator
         continue-on-error: true
+        timeout-minutes: 18
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: &api24-emulator-with
           api-level: 24
@@ -142,9 +149,18 @@ jobs:
             echo "::warning title=Emulator start retried::the Android emulator step failed before the tests started (android-api24-emulator), starting the emulator once more"
             echo "retry=true" >> "$GITHUB_OUTPUT"
           fi
+      # A step that reached its limit leaves its emulator and adb server
+      # running, and the second start would find the old emulator-5554.
+      - name: Stop the first emulator and the adb server
+        if: steps.emulator_start.outputs.retry == 'true'
+        run: |
+          pkill -9 -f qemu-system || true
+          timeout -k 5 30 "$ANDROID_HOME/platform-tools/adb" kill-server || true
+          pkill -9 -x adb || true
       - name: Run integration tests (Android 7.0 emulator), second emulator start
         id: emulator_retry
         if: steps.emulator_start.outputs.retry == 'true'
+        timeout-minutes: 18
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: *api24-emulator-with
       - name: Fail the job when the emulator step failed
