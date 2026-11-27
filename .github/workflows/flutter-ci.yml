@@ -126,6 +126,39 @@ jobs:
         working-directory: example/flex_test_host
         run: flutter test -d macos integration_test
 
+      - name: Install example app dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: Read Xcode build version
+        id: xcode
+        run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+
+      # The example app depends on opencv_dart, whose dartcv4 build hook
+      # downloads OpenCV and compiles dartcv4's C++ wrappers with CMake: about
+      # 8 of the 10 minutes the first example build takes. Flutter's hooks
+      # runner keeps that output in .dart_tool/hooks_runner and reruns the hook
+      # when its input (target, compiler paths, user defines), the files it
+      # read or its environment differ from what it recorded, so a restored
+      # entry is only reused where the hook would build the same thing. Here
+      # the PATH Xcode hands the hook holds a Metal toolchain mount that
+      # differs between runners, so the hook usually reruns, but inside the
+      # restored CMake tree, which saves the download and part of the build.
+      # The key follows the resolved package versions, Flutter and Xcode. Only
+      # dependency hooks run here; flutter_litert has none, so the plugin's
+      # own native code is never restored.
+      #
+      # Every run restores the entry, but only a push to main saves one, after
+      # the first example build below: an entry is about 210 MB, the
+      # repository's Actions cache holds 10 GB, and an entry saved by a pull
+      # request run is only visible to that pull request's later runs.
+      - name: Restore example build hook output (macOS)
+        id: hooks-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: example-hooks-macos-${{ runner.arch }}-xcode-${{ steps.xcode.outputs.build }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('example/pubspec.yaml', 'example/pubspec.lock') }}
+
       # Builds the example app and runs real CompiledModel inference inside it,
       # proving the production load path end to end: the podspec ships
       # libLiteRt.dylib as a resource and the loader resolves it from inside
@@ -137,6 +170,15 @@ jobs:
       - name: Run CompiledModel integration tests (macOS desktop)
         working-directory: example
         run: flutter test integration_test/compiled_model_test.dart -d macos --timeout 600s
+
+      # Saved on a push to main when nothing was restored, as explained at the
+      # restore step above.
+      - name: Save example build hook output (macOS)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.hooks-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: ${{ steps.hooks-cache.outputs.cache-primary-key }}
 
       # GpuCompilationCache on the real Metal accelerator: the cache files it
       # writes per key, their reuse, and outputs equal to an uncached load.
@@ -899,6 +941,24 @@ jobs:
           ./scripts/use_local_coreml_xcframework.sh \
             "$GITHUB_WORKSPACE/ios/TensorFlowLiteCCoreML.xcframework"
 
+      - name: Install example app dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: Read Xcode build version
+        id: xcode
+        run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+
+      # The dartcv4 build hook output for the simulator, cached as in
+      # build-macos: it is about 6 of the 8 minutes the build below takes.
+      # Restored on every run and saved only by a push to main, as there.
+      - name: Restore example build hook output (iOS simulator)
+        id: hooks-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: example-hooks-ios-simulator-${{ runner.arch }}-xcode-${{ steps.xcode.outputs.build }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('example/pubspec.yaml', 'example/pubspec.lock') }}
+
       # Compiles the example app for the simulator against the staged
       # framework, as the simulator integration tests did before they ran.
       # Those tests timed out or failed to launch on their first attempt in 9
@@ -907,3 +967,12 @@ jobs:
       - name: Build the example app for the iOS simulator
         working-directory: example
         run: flutter build ios --simulator --debug
+
+      # Saved on a push to main when nothing was restored, as explained at
+      # build-macos's restore step.
+      - name: Save example build hook output (iOS simulator)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.hooks-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: ${{ steps.hooks-cache.outputs.cache-primary-key }}
