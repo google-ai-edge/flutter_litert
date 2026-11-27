@@ -564,8 +564,17 @@ jobs:
   # gradle.properties and holds the Play services tests, apart from the main
   # example and its bundled-runtime suites. This job builds the host's debug
   # and release (R8) APKs and checks that they package the Play services
-  # runtime only. Its emulator test failed its first attempt in 23 of 43
-  # runs, so it is out of this workflow and lives in device-tests-manual.yml.
+  # runtime only. The Play services emulator test failed its first attempt in
+  # 23 of 43 runs, so it is out of this workflow and lives in
+  # device-tests-manual.yml.
+  #
+  # The same host then runs on an emulator image without Google Play
+  # services: initializeAndroidRuntime() must fail promptly with both reasons
+  # instead of hanging, and models must keep reporting the failure. Rebuilt
+  # with flutterLitert.runtime=auto, it must fall back to the bundled runtime,
+  # in the integration test and in the release smoke APK. Until 2026-11 that
+  # half was a job of its own, build-android-no-play-services; one job sets
+  # up the runner and resolves the host once for both.
   build-android-play-services:
     runs-on: ubuntu-24.04
     # A stall must end the job in an hour, not at the 6 hour limit.
@@ -595,7 +604,8 @@ jobs:
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
       # Gradle downloads cached and from Google's copy, explained at
       # build-android. This job saves the test host's entry on a push to main:
-      # its builds need what build-android-no-play-services needs, and more.
+      # its builds, with and without flutterLitert.runtime=auto, need
+      # everything the host's emulator jobs in device-tests-manual.yml need.
       - uses: ./.github/actions/gradle-plugin-repositories
         with:
           downloads: play-services-test-host
@@ -653,44 +663,6 @@ jobs:
           python3 -I scripts/check_android_runtime_apk.py --runtime playServices
           example/play_services_test_host/build/app/outputs/flutter-apk/app-release.apk
 
-  # The same host on an emulator image without Google Play services:
-  # initializeAndroidRuntime() must fail promptly with both reasons instead of
-  # hanging, and models must keep reporting the failure. Rebuilt with
-  # flutterLitert.runtime=auto, it must fall back to the bundled runtime, in
-  # the integration test and in the release smoke APK.
-  build-android-no-play-services:
-    runs-on: ubuntu-24.04
-    # Takes 7 minutes, 9 at most in 39 runs.
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      # One debug keystore for every build, explained at build-android.
-      - name: Use one debug keystore for every build
-        run: |
-          mkdir -p ~/.android ~/.config/.android
-          [ -f ~/.android/debug.keystore ] || keytool -genkeypair -keystore ~/.android/debug.keystore \
-            -storepass android -keypass android -alias androiddebugkey \
-            -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
-          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle downloads cached and from Google's copy, explained at
-      # build-android. build-android-play-services saves the entry.
-      - uses: ./.github/actions/gradle-plugin-repositories
-        with:
-          downloads: play-services-test-host
-      - uses: ./.github/actions/flutter
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-
-      - name: Install host dependencies
-        working-directory: example/play_services_test_host
-        run: flutter pub get
-
       - name: Enable KVM for hardware-accelerated emulation
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -703,6 +675,8 @@ jobs:
         run: bash scripts/android_sdk_packages.sh emulator 'system-images;android-34;default;x86_64'
 
       # A launch is tried once more and a test is not, as in build-android.
+      # The auto runtime release build below overwrites the Play services
+      # release APK checked above.
       - name: Run the no Play services integration test (Android emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env:
