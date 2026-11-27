@@ -39,6 +39,49 @@ env:
   FLUTTER_VERSION: '3.50.0'
 
 jobs:
+  # On a pull request, two narrow lanes run only when the PR touches what they
+  # build: build-android-agp9 builds just the plugin's Android module, and
+  # build-windows-flex just the Flex host on Windows, whose Dart side the Linux
+  # and macOS Flex tests cover on every run. Pushes and manual runs skip this
+  # job, and both lanes always run then. Should this job fail, both run too.
+  #
+  # The PR's merge commit has the base branch head as its first parent, so the
+  # diff between the two is what the PR changes. Diffing names needs commits
+  # and trees only, so the checkout fetches no other file contents.
+  changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      agp9: ${{ steps.diff.outputs.agp9 }}
+      windows_flex: ${{ steps.diff.outputs.windows_flex }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .github
+      - name: List the files the pull request changes
+        id: diff
+        run: |
+          git diff --name-only HEAD^1 HEAD | tee "$RUNNER_TEMP/changed.txt"
+          changed() {
+            if grep -qE "$1" "$RUNNER_TEMP/changed.txt"; then echo true; else echo false; fi
+          }
+          workflow='^\.github/workflows/flutter-ci\.yml$'
+          # The plugin module, the native sources its CMake build compiles,
+          # the example's Gradle project, every pubspec, and the scripts
+          # and shared actions the lane runs.
+          agp9=$(changed "$workflow|^android/|^src/|^example/android/|(^|/)pubspec\.yaml$|^\.github/actions/(gradle-plugin-repositories|flutter)/|^scripts/(gradle_distribution|android_sdk_packages|gradle_not_found)\.sh$")
+          # The Flex host and its pins, the plugin's Windows build and the
+          # native sources it compiles, the root pubspec the host depends on,
+          # the Dart code that loads the Flex DLL, and the Flutter setup action.
+          windows_flex=$(changed "$workflow|^example/flex_test_host/|^windows/|^src/|^pubspec\.yaml$|^lib/src/delegates/flex_delegate|^\.github/actions/flutter/")
+          echo "agp9=$agp9" >> "$GITHUB_OUTPUT"
+          echo "windows_flex=$windows_flex" >> "$GITHUB_OUTPUT"
+          echo "build-android-agp9: $agp9, build-windows-flex: $windows_flex"
+
   build-macos:
     # macos-latest is macos-26 today and moves when GitHub retargets the
     # label; a named image changes only when this line does.
@@ -285,6 +328,9 @@ jobs:
   # does not have to provide: windows/CMakeLists.txt bundles it next to the
   # executable.
   build-windows-flex:
+    needs: changes
+    # Runs on every push; on a pull request, when the changes job says so.
+    if: ${{ !cancelled() && needs.changes.outputs.windows_flex != 'false' }}
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
@@ -718,6 +764,9 @@ jobs:
   # still merge into the AAR (the CMake custom-ops lib plus the downloaded
   # LiteRT Next runtime and GPU accelerator).
   build-android-agp9:
+    needs: changes
+    # Runs on every push; on a pull request, when the changes job says so.
+    if: ${{ !cancelled() && needs.changes.outputs.agp9 != 'false' }}
     runs-on: ubuntu-24.04
     # Takes 4 minutes, 7 at most in 86 runs.
     timeout-minutes: 20
