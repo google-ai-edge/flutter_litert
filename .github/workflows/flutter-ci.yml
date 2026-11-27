@@ -1,12 +1,23 @@
 name: build
+# A change made only of these files starts no run: no build or test reads
+# them. LICENSE is not among them, because the podspecs name it and Flutter
+# copies every package's LICENSE into the app it builds.
 on:
   workflow_dispatch:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'AUTHORS'
   push:
     branches:
       - main
       - compiled-model
       - fix/wasm-ready-3.2.0
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'AUTHORS'
 
 permissions:
   contents: read
