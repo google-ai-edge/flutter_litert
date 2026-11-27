@@ -11,6 +11,14 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels the run still going for its previous
+# commit, whose result no longer matters. Every other run (pushes to main, a
+# manual dispatch) gets a group of its own, so it is never cancelled or held
+# back by another one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 # One Flutter version for every job, so a new stable release cannot change CI
 # between two runs of the same commit: Flutter 3.50.0 (2026-11-11) needed
 # AGP 9 and Gradle 9 changes before CI passed again. Raise it on purpose, in a
