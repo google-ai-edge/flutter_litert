@@ -13,6 +13,28 @@ custom ops, web runtimes, and shared ML utility code.
 - Add or update focused tests when changing public API, delegate behavior,
   tensor conversion, model training, custom ops, or web runtime code.
 
+## Repeat runs of new tests
+
+A pull request that adds or changes a test also starts the `test repeat`
+workflow (`.github/workflows/test-repeat.yml`). It runs each new or changed
+test 10 times in a row, alone, on every runner that runs it in `build`
+(`flutter-ci.yml`) and with the same command, and fails when any run fails.
+A changed helper repeats the tests that import it. `.github/test-lanes.json`
+says which job runs which test; when `flutter-ci.yml` starts running a test,
+or runs it another way, change its lane there too.
+
+To repeat tests by hand, for example more often or on a device lane:
+
+```sh
+gh workflow run test-repeat.yml --ref <branch> \
+  -f files='test/a_test.dart example/integration_test/b_test.dart' \
+  -f runs=20 -f lanes=''
+```
+
+`lanes` empty picks every lane that runs the files. The `ios-simulator`,
+`android-play-services` and `android-api24` lanes run only when named in
+`lanes`. A lane named with no `files` runs all of its tests.
+
 ## Native and platform changes
 
 - Keep platform-specific behavior documented in `README.md` and matching

@@ -1,0 +1,365 @@
+name: test repeat
+
+# Runs new and changed tests many times in a row, alone, on the runners CI
+# runs them on, so a flaky test shows up before it lands instead of after.
+# One green run of the full CI says little about a new test: one that fails
+# in 1 run of 3 passes it half the time.
+#
+# On a pull request: scripts/test_repeat.py diffs the pull request and finds
+# every test file it adds, changes or renames, plus the tests that import a
+# helper it changes. .github/test-lanes.json maps each file to the lanes that
+# run it, one lane per flutter-ci.yml job that runs it, and each lane runs it
+# 10 times in one job. A failed run is never run again; the job is red when
+# any of the 10 was. A pull request that changes no test starts no repeat job.
+#
+# By hand: Actions, "test repeat", Run workflow, or
+#   gh workflow run test-repeat.yml --ref <branch> \
+#     -f files='test/a_test.dart example/integration_test/b_test.dart' \
+#     -f runs=10 -f lanes=''
+# files: test files, repo-relative, separated by spaces.
+# runs: runs of each file, 1 to 50.
+# lanes: lanes from .github/test-lanes.json. Empty runs every lane that runs
+#   the files on its own. The ios-simulator, android-play-services and
+#   android-api24 lanes run only when named here, since they are not reliable
+#   enough to start on every pull request (device-tests-manual.yml). Named
+#   lanes with no files run every file those lanes run.
+#
+# The setup steps below are copied from the flutter-ci.yml jobs (and the
+# device-tests-manual.yml jobs) that the lanes mirror. Keep the two in step:
+# when a job there changes how it sets up or runs its tests, change it here and
+# in .github/test-lanes.json too. scripts/test_repeat_test.py checks that each
+# lane's runner, files and Android image still match the job it mirrors.
+on:
+  pull_request:
+    paths:
+      - 'test/**'
+      - 'example/integration_test/**'
+      - 'example/test/**'
+      - 'example/tool/**'
+      - 'example/flex_test_host/integration_test/**'
+      - 'example/flex_test_host/test/**'
+      - 'example/play_services_test_host/integration_test/**'
+      - 'example_web/integration_test/**'
+      - 'example_web/test_driver/**'
+      - '.github/test-lanes.json'
+      - '.github/workflows/test-repeat.yml'
+      - 'scripts/test_repeat*.py'
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'Test files to repeat, repo-relative, separated by spaces'
+        type: string
+        required: false
+        default: ''
+      runs:
+        description: 'Runs of each file (1 to 50)'
+        type: string
+        required: false
+        default: '10'
+      lanes:
+        description: 'Lanes from .github/test-lanes.json, separated by spaces (empty: every lane that runs the files on its own)'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+# The same Flutter version as flutter-ci.yml.
+env:
+  FLUTTER_VERSION: '3.50.0'
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      # A pull request checks out its merge commit: its first parent is the
+      # base, so the diff against it is the pull request's change, with no
+      # API call and no extra permission.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Plan the repeat runs
+        id: plan
+        env:
+          TEST_REPEAT_EVENT: ${{ github.event_name }}
+          TEST_REPEAT_FILES: ${{ inputs.files }}
+          TEST_REPEAT_RUNS: ${{ inputs.runs }}
+          TEST_REPEAT_LANES: ${{ inputs.lanes }}
+        run: |
+          : > "$RUNNER_TEMP/changes.txt"
+          if [ "$TEST_REPEAT_EVENT" = pull_request ]; then
+            git diff --name-status -M HEAD^1 HEAD > "$RUNNER_TEMP/changes.txt"
+            cat "$RUNNER_TEMP/changes.txt"
+          fi
+          python3 -I scripts/test_repeat.py plan --changes "$RUNNER_TEMP/changes.txt"
+
+  repeat:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      TEST_REPEAT_LANE: ${{ matrix.lane }}
+      TEST_REPEAT_FILES: ${{ matrix.files }}
+      TEST_REPEAT_RUNS: ${{ matrix.runs }}
+      TEST_REPEAT_FIRST: ${{ matrix.first }}
+      TEST_REPEAT_TOTAL: ${{ matrix.total }}
+    steps:
+      # From android-play-services-emulator in device-tests-manual.yml.
+      - name: Free disk space
+        if: matrix.free_disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # From build-android in flutter-ci.yml, which explains each step.
+      - if: matrix.android
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Use one debug keystore for every build
+        if: matrix.android
+        run: |
+          mkdir -p ~/.android ~/.config/.android
+          [ -f ~/.android/debug.keystore ] || keytool -genkeypair -keystore ~/.android/debug.keystore \
+            -storepass android -keypass android -alias androiddebugkey \
+            -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
+          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
+      # The Gradle download cache entry of the mirrored job, only restored:
+      # without save, the action never saves, so a run here cannot change
+      # what flutter-ci.yml restores.
+      - if: matrix.android
+        uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: ${{ matrix.gradle_downloads }}
+
+      # Tried once more when it fails, as in flutter-ci.yml. The SDK and pub
+      # caches flutter-ci.yml saves are only restored.
+      - if: matrix.flutter
+        uses: ./.github/actions/flutter
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          restore-only: 'true'
+
+      # From ios-simulator in device-tests-manual.yml.
+      - name: Select Xcode
+        if: matrix.xcode != ''
+        env:
+          XCODE_VERSION: ${{ matrix.xcode }}
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          xcodebuild -version
+          test "$(xcodebuild -version | head -n 1)" = "Xcode ${XCODE_VERSION}"
+
+      - name: Install Linux desktop dependencies
+        if: matrix.apt != ''
+        uses: ./.github/actions/apt-install
+        with:
+          packages: ${{ matrix.apt }}
+
+      - name: Enable desktop
+        if: matrix.desktop != ''
+        env:
+          DESKTOP: ${{ matrix.desktop }}
+        run: flutter config --enable-"$DESKTOP"-desktop
+
+      - name: Install dependencies
+        if: matrix.pub_get != ''
+        env:
+          PUB_GET: ${{ matrix.pub_get }}
+        run: |
+          for dir in $PUB_GET; do
+            (cd "$dir" && flutter pub get)
+          done
+
+      # The example's build hook output, restored as build-macos in
+      # flutter-ci.yml restores it, which explains it. Only a push to main
+      # saves it there; this workflow never does.
+      - name: Read Xcode build version
+        id: xcode
+        if: matrix.hooks_cache == 'macos'
+        run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+      - name: Restore example build hook output (macOS)
+        if: matrix.hooks_cache == 'macos'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: example-hooks-macos-${{ runner.arch }}-xcode-${{ steps.xcode.outputs.build }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('example/pubspec.yaml', 'example/pubspec.lock') }}
+
+      # The flex library caches of build-macos, build-linux and
+      # build-windows-flex in flutter-ci.yml, which explain them. Only
+      # restored: those jobs save them, this workflow never does.
+      - name: Restore FlexDelegate library (macOS)
+        if: matrix.flex_cache == 'macos'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm/artifacts
+          key: flex-delegate-macos-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
+      - name: Locate FlexDelegate library (Linux)
+        id: flex-linux
+        if: matrix.flex_cache == 'linux'
+        working-directory: example/flex_test_host
+        run: |
+          root=$(python3 -c "import json, urllib.parse; print([urllib.parse.urlparse(p['rootUri']).path for p in json.load(open('.dart_tool/package_config.json'))['packages'] if p['name'] == 'flutter_litert_flex'][0])")
+          echo "path=$root/linux/libtensorflowlite_flex-linux.so" >> "$GITHUB_OUTPUT"
+      - name: Restore FlexDelegate library (Linux)
+        if: matrix.flex_cache == 'linux'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ steps.flex-linux.outputs.path }}
+          key: flex-delegate-linux-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
+      - name: Locate FlexDelegate library (Windows)
+        id: flex-windows
+        if: matrix.flex_cache == 'windows'
+        working-directory: example/flex_test_host
+        run: |
+          python - >> "$GITHUB_OUTPUT" <<'PY'
+          import json, os, urllib.parse, urllib.request
+          packages = json.load(open('.dart_tool/package_config.json'))['packages']
+          uri = [p['rootUri'] for p in packages if p['name'] == 'flutter_litert_flex'][0]
+          parsed = urllib.parse.urlparse(uri)
+          if parsed.scheme == 'file':
+              root = urllib.request.url2pathname(parsed.path)
+          else:
+              root = os.path.join('.dart_tool', urllib.request.url2pathname(uri))
+          root = os.path.abspath(root)
+          print('path=' + os.path.join(root, 'windows', 'libtensorflowlite_flex-win.dll'))
+          PY
+      - name: Restore FlexDelegate library (Windows)
+        if: matrix.flex_cache == 'windows'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ${{ steps.flex-windows.outputs.path }}
+          key: flex-delegate-windows-${{ hashFiles('example/flex_test_host/pubspec.lock') }}
+
+      # From ios-simulator in device-tests-manual.yml, which explains them.
+      - name: Stage patched Core ML framework for SwiftPM tests
+        if: matrix.ios_simulator
+        run: |
+          ./scripts/use_local_coreml_xcframework.sh \
+            "$GITHUB_WORKSPACE/ios/TensorFlowLiteCCoreML.xcframework"
+      - name: Boot iOS simulator
+        if: matrix.ios_simulator
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          iphones = [d for v in devices.values() for d in v if 'iPhone' in d['name']]
+          print(iphones[-1]['udid'])
+          ")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          open -a Simulator --args -CurrentDeviceUDID "$UDID" || true
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+
+      # The runs, for every lane without an emulator.
+      - name: Run the tests
+        if: ${{ !matrix.android }}
+        env:
+          PY: ${{ runner.os == 'Windows' && 'python' || 'python3' }}
+        run: '"$PY" -I scripts/test_repeat.py run'
+
+      # From build-android in flutter-ci.yml, which explains them.
+      - name: Enable KVM for hardware-accelerated emulation
+        if: matrix.android
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Download the emulator and its system image
+        if: matrix.android
+        env:
+          SDK_PACKAGES: ${{ matrix.sdk_packages }}
+        run: |
+          read -ra packages <<< "$SDK_PACKAGES"
+          bash scripts/android_sdk_packages.sh "${packages[@]}"
+
+      # The emulator start retry of device-tests-manual.yml, which explains
+      # it: a failure before the marker is written happened before any test
+      # ran, and starts a second emulator once. A test is never run again.
+      # emu_timeout is the step limit of the API 24 lane (half of the job's
+      # time after its setup, see scripts/test_repeat.py), as the API 24 job
+      # there has, and the job's own timeout on the other lanes.
+      - name: Run the tests (Android emulator)
+        id: emulator
+        if: matrix.android
+        continue-on-error: true
+        timeout-minutes: ${{ matrix.emu_timeout }}
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with: &emulator-with
+          api-level: ${{ matrix.emu_api }}
+          target: ${{ matrix.emu_target }}
+          arch: x86_64
+          profile: pixel_6
+          ram-size: ${{ matrix.emu_ram }}
+          cores: ${{ matrix.emu_cores }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            touch "$RUNNER_TEMP/emulator-script-started"
+            python3 -I scripts/test_repeat.py run
+      - name: Check whether the emulator failed before the tests started
+        id: emulator_start
+        if: matrix.android && steps.emulator.outcome == 'failure'
+        run: |
+          if [ -e "$RUNNER_TEMP/emulator-script-started" ]; then
+            echo "retry=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Emulator start retried::the Android emulator step failed before the tests started ($TEST_REPEAT_LANE), starting the emulator once more"
+            echo "retry=true" >> "$GITHUB_OUTPUT"
+          fi
+      # As in device-tests-manual.yml: a step that reached its limit leaves
+      # its emulator and adb server running, and the second start would find
+      # the old emulator-5554.
+      - name: Stop the first emulator and the adb server
+        if: steps.emulator_start.outputs.retry == 'true'
+        run: |
+          pkill -9 -f qemu-system || true
+          timeout -k 5 30 "$ANDROID_HOME/platform-tools/adb" kill-server || true
+          pkill -9 -x adb || true
+      - name: Run the tests (Android emulator), second emulator start
+        id: emulator_retry
+        if: steps.emulator_start.outputs.retry == 'true'
+        timeout-minutes: ${{ matrix.emu_timeout }}
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with: *emulator-with
+      - name: Fail the job when the emulator step failed
+        if: matrix.android && steps.emulator.outcome == 'failure' && steps.emulator_retry.outcome != 'success'
+        env:
+          EMULATOR_RETRY: ${{ steps.emulator_start.outputs.retry }}
+        run: |
+          echo "::error::the Android emulator step failed (retry fired: ${EMULATOR_RETRY})"
+          exit 1
+
+      # Every run's JSON report and, on Android, device logs.
+      - name: Upload the reports
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-repeat-${{ matrix.id }}
+          path: ${{ runner.temp }}/test-repeat/
+          if-no-files-found: ignore
