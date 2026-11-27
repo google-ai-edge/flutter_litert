@@ -242,6 +242,10 @@ jobs:
         working-directory: example/flex_test_host
         run: xvfb-run -a flutter test -d linux integration_test
 
+      - name: Run Flex host widget test
+        working-directory: example/flex_test_host
+        run: flutter test test/widget_test.dart
+
       # Builds the example app and runs real CompiledModel inference inside
       # it, proving the production load path end to end: CMake bundles
       # linux/lib/libLiteRt.so into the app bundle and the loader resolves it
@@ -258,6 +262,16 @@ jobs:
       - name: Run Interpreter/CompiledModel coexistence tests (Linux desktop)
         working-directory: example
         run: xvfb-run -a flutter test integration_test/interpreter_coexistence_test.dart -d linux --timeout 600s
+
+      # The tools the Test Lab model matrix runs with (the model manifest and
+      # the shard report merger). They are pure Dart, but flutter test first
+      # builds the example's native dependencies for the test runner, about
+      # 4 minutes of dartcv4's build hook that the desktop builds above do not
+      # share. build-linux ends well before build-macos, so the step costs
+      # runner minutes and no wall time.
+      - name: Run example tool tests
+        working-directory: example
+        run: flutter test test
 
   build-windows:
     runs-on: windows-2022
