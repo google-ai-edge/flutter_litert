@@ -1998,7 +1998,7 @@ final interpreter = await Interpreter.fromAsset('assets/model.tflite');
 interpreter.run(input, output);
 ```
 
-By default, `initializeWeb()` loads the TFLite.js / TensorFlow.js scripts from a CDN. You can pass custom script URLs to self-host the files (for offline use or stricter CSP).
+By default, `initializeWeb()` loads the TFLite.js / TensorFlow.js scripts from a CDN. You can pass custom script URLs to self-host the files (for offline use or stricter CSP). The default scripts are pinned to a fixed commit and checked against Subresource Integrity hashes before they run; custom URLs are loaded as given.
 
 ### LiteRT.js runtime (WASM or WebGPU)
 
