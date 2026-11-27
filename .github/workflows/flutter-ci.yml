@@ -454,7 +454,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # A fresh runner has no debug keystore. With AGP 9.3.3 the first debug
       # build creates ~/.android/debug.keystore and later builds create and use
       # ~/.config/.android/debug.keystore, so APKs from one job are signed with
@@ -468,10 +467,14 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle downloads come from the cache where it can, and plugins from
-      # Maven Central directly instead of through the plugin portal's redirect,
-      # which answered 429 or served nothing in two runs on 2026-11-12.
+      # Gradle's downloads come from a cache entry for the app this job
+      # builds, which this job saves on a push to main, and otherwise from
+      # Google's copy of Maven Central, not Maven Central, which turned Android
+      # jobs away with 429 (2026-11-27). The action explains both.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: example
+          save: 'true'
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -575,7 +578,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android.
       - name: Use one debug keystore for every build
         run: |
@@ -584,8 +586,13 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android. This job saves the test host's entry on a push to main:
+      # its builds need what build-android-no-play-services needs, and more.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: play-services-test-host
+          save: 'true'
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -604,8 +611,10 @@ jobs:
       # or AGP update want another one, this first Gradle build downloads it,
       # and that download can break off and leave a corrupted archive ("Error
       # on ZipFile unknown archive"), which fails assembleDebug. Only in that
-      # case the partial NDK is purged and the build runs again, up to three
-      # attempts; any other build failure fails the step at once.
+      # case the partial NDK is purged and the build runs again, and when a
+      # repository answered "not found" for Kotlin or kotlin-dsl,
+      # scripts/gradle_not_found.sh makes Gradle ask again; up to three
+      # attempts, and any other build failure fails the step at once.
       - name: Build the Play services host APK
         working-directory: example/play_services_test_host
         run: |
@@ -613,9 +622,12 @@ jobs:
             flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/host-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/host-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 
@@ -653,7 +665,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android.
       - name: Use one debug keystore for every build
         run: |
@@ -662,8 +673,11 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android. build-android-play-services saves the entry.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: play-services-test-host
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -738,9 +752,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
-      # Gradle plugins from Maven Central directly, explained at build-android.
+      # Gradle downloads cached and from Google's copy, explained at build-android.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: agp9
+          save: 'true'
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -774,8 +790,9 @@ jobs:
       # can break off and leave a corrupted archive (on 2026-11-12 it took 9
       # minutes and ended in "Archive is not a ZIP archive"), which fails the
       # build. Only in that case the partial NDK is purged and the build runs
-      # again, up to three attempts; any other build failure fails the step
-      # at once.
+      # again, and when a repository answered "not found" for Kotlin or
+      # kotlin-dsl, scripts/gradle_not_found.sh makes Gradle ask again; up to
+      # three attempts, and any other build failure fails the step at once.
       - name: Assemble plugin AAR under AGP 9 (regression guard for issue #14)
         working-directory: example/android
         run: |
@@ -783,9 +800,12 @@ jobs:
             ./gradlew :flutter_litert:assembleRelease --stacktrace 2>&1 | tee "$RUNNER_TEMP/agp9-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/agp9-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/agp9-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/agp9-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 

@@ -68,7 +68,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android in
       # flutter-ci.yml.
       - name: Use one debug keystore for every build
@@ -78,9 +77,11 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android
-      # in flutter-ci.yml.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android in flutter-ci.yml, which saves the entry this job reads.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: example
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -210,7 +211,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android in
       # flutter-ci.yml.
       - name: Use one debug keystore for every build
@@ -220,9 +220,12 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android
-      # in flutter-ci.yml.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android in flutter-ci.yml. build-android-play-services saves the
+      # entry this job reads.
       - uses: ./.github/actions/gradle-plugin-repositories
+        with:
+          downloads: play-services-test-host
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: 'stable'
@@ -241,8 +244,10 @@ jobs:
       # or AGP update want another one, this first Gradle build downloads it,
       # and that download can break off and leave a corrupted archive ("Error
       # on ZipFile unknown archive"), which fails assembleDebug. Only in that
-      # case the partial NDK is purged and the build runs again, up to three
-      # attempts; any other build failure fails the step at once.
+      # case the partial NDK is purged and the build runs again, and when a
+      # repository answered "not found" for Kotlin or kotlin-dsl,
+      # scripts/gradle_not_found.sh makes Gradle ask again; up to three
+      # attempts, and any other build failure fails the step at once.
       - name: Build the Play services host APK
         working-directory: example/play_services_test_host
         run: |
@@ -250,9 +255,12 @@ jobs:
             flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/host-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/host-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 
