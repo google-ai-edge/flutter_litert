@@ -1,3 +1,32 @@
+## Unreleased
+
+### CompiledModel
+
+* **On-disk GPU kernel cache**
+  ([#39](https://github.com/google-ai-edge/flutter_litert/pull/39)).
+  `CompiledModelConfig` takes a `gpuCache`, a
+  `GpuCompilationCache(directory:, key:, programCache:)`, and LiteRT then
+  keeps the GPU programs it compiles in that directory, so later loads of the
+  same model can skip most of the GPU compile. The saving was measured on
+  Android; on macOS (Metal) the cache is reused but did not make loads
+  faster on CI. Only the GPU attempt of `auto`,
+  `gpu` and `gpuWithCpuFallback` on native platforms uses it; CPU and NPU
+  policies, the CPU fallback and the web ignore it. Change the key whenever
+  the model changes. Precision needs no key of its own: LiteRT puts it in
+  each entry's fingerprint. See
+  [GPU kernel cache](README.md#gpu-kernel-cache). Thanks to ebraraktas for the
+  contribution.
+  * A bad setting throws before compilation starts, so `auto` and
+    `gpuWithCpuFallback` cannot hide it behind the CPU fallback: a relative or
+    empty `directory`, an empty `key`, a `/` or `\` in `key`, or a double
+    quote or line break in either throws `ArgumentError`, and a directory
+    that cannot be created throws `FileSystemException`. The directory is
+    created at that point if it is missing.
+  * Single quotes are allowed in `directory` and `key`.
+  * `copyWith(policy: ...)` keeps `gpuCache` for any policy, as the unnamed
+    constructor does; a policy without the GPU ignores it. Pass
+    `clearGpuCache: true` to drop it.
+
 ## 4.2.0
 
 The Android package is renamed to `com.google.ai.edge.flutter_litert`, to

@@ -698,13 +698,32 @@ final model = CompiledModel.fromFileWithConfig(
 ```
 
 * Put the directory in the app's cache directory; it is created if missing.
+  It must be an absolute path.
 * The key must identify the exact model: include a model version or content
-  hash, otherwise a changed model may reuse stale entries.
-* `directory` and `key` must not contain quotes or newlines (`ArgumentError`).
+  hash, otherwise a changed model may reuse stale entries. LiteRT tells its
+  entries apart by the key, the GPU options, the GPU backend and the tensor
+  sizes, not by the weights, so a retrained model with the same shapes
+  needs a new key.
+* The key does not need to change with `precision`: LiteRT puts the
+  precision in each entry's fingerprint, so fp16 and fp32 kernels are kept
+  side by side under one key. The key only needs to change with the model.
+* `directory` and `key` must not be empty or contain double quotes or line
+  breaks, and `key` must not contain `/` or `\`: LiteRT names the cache file
+  after the key, so a separator would point into a folder that does not
+  exist. A bad setting, or a directory that cannot be created, throws
+  (`ArgumentError` or `FileSystemException`) before compilation starts, so
+  `auto` and `gpuWithCpuFallback` do not hide it behind the CPU fallback.
 * Only the GPU attempt uses it; the CPU fallback is unaffected. It is
   ignored for CPU/NPU policies and on the web, and may be ignored by the
   Play services runtime if it does not forward GPU options.
-* The first load still pays full compile cost and writes the files.
+* The first load still pays the full compile cost and writes
+  `<key>_mldrift_program_cache.bin` in the directory. With
+  `programCache: false` nothing is written or read; the directory is still
+  created.
+* The load-time saving was measured on Android. On macOS (Metal) the cache
+  is written, reused in the same process and in a new one, and gives
+  identical outputs, but a CI run showed no faster load, so do not count on
+  a speedup on Apple platforms.
 
 ### CompiledModel on the web
 

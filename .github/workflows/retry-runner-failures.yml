@@ -1,10 +1,14 @@
 name: Retry runner failures
 
 # Reruns the `build` workflow only when GitHub failed to provide or keep a machine
-# for a job, the machine ran out of disk, or a download from GitHub failed, so real
-# failures stay red. Stops after 3 attempts.
+# for a job, the machine ran out of disk, a download from GitHub failed,
+# Flutter's own Gradle build could not get the kotlin-dsl plugin from the plugin
+# portal, or Maven Central turned a Gradle download away with 429 or answered
+# "not found" for Kotlin, so real failures stay red. Stops after 3 attempts.
+# It checks out no code, runs nothing from the build, and passes only run and job ids
+# to gh, so a pull request's build cannot change what it runs.
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: [build]
     types: [completed]
 
@@ -21,7 +25,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Rerun if a job lost its runner or a GitHub download failed
+      - name: Rerun if a job lost its runner or a download failed
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -38,9 +42,24 @@ jobs:
               exit 0
             fi
             # The annotations do not name these failures, so they are found in the job's log.
-            if gh api "repos/$GH_REPO/actions/jobs/$job/logs" 2> /dev/null \
-              | grep -qE 'Server returned HTTP response code: 5[0-9][0-9] for URL: https://github\.com/|flutter_litert: could not download'; then
-              echo "Job $job failed to download from GitHub, rerunning failed jobs."
+            # kotlin-dsl is a plugin of Flutter's own Gradle build (flutter_tools), not of
+            # this repository, and only the plugin portal serves it. It failed 43463814753,
+            # and 45918888991 after Gradle's 3 tries: the max.retries=10 that
+            # gradle-plugin-repositories set then is read by nothing.
+            # Maven Central answered 429 for longer than those 3 tries; 3 of 40 Android
+            # jobs failed that way within an hour on 2026-11-27. The jobs now cache
+            # their Gradle downloads and get them from Google's copy of Maven Central,
+            # so these patterns are kept for a cold cache on a bad day.
+            # Maven Central also answered "not found" for kotlin-stdlib 2.3.20, which
+            # kotlin-dsl needs, on 7 of 50 runners for the whole job (2026-11-19), which
+            # Gradle never tries again. The builds ask up to twice more
+            # (scripts/gradle_not_found.sh); a runner that still gets it is replaced here.
+            # Job logs hold color codes, and without --allow-escape-sequences the runner's
+            # gh prints nothing for them ("the response contains terminal escape
+            # sequences"), so no log was ever matched.
+            if gh api --allow-escape-sequences "repos/$GH_REPO/actions/jobs/$job/logs" 2> /dev/null \
+              | grep -qE "Server returned HTTP response code: 5[0-9][0-9] for URL: https://github\.com/|flutter_litert: could not download|Plugin \[id: 'org\.(gradle\.kotlin\.kotlin-dsl|jetbrains\.kotlin\.[a-z.-]+)'[^]]*\] was not found|Could not find org\.(jetbrains|gradle)\.kotlin[.:]|Received status code 429 from server: Too Many Requests"; then
+              echo "Job $job failed a download, rerunning failed jobs."
               gh run rerun "$RUN_ID" --failed
               exit 0
             fi

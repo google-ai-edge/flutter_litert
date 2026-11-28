@@ -99,8 +99,12 @@ enum CompiledModelPolicy {
 /// web, and by runtimes that do not forward GPU options (for example the
 /// Play services GPU runtime may not honour it).
 ///
-/// Neither [directory] nor [key] may contain quotes or newlines; this is
-/// checked when the model is compiled and throws [ArgumentError].
+/// [directory] must be absolute, neither [directory] nor [key] may be empty
+/// or contain double quotes or line breaks, and [key] may not contain `/` or
+/// `\`. These are checked, and [directory] is created, before the first
+/// compile attempt, so a bad setting throws ([ArgumentError], or a
+/// `FileSystemException` when the directory cannot be created) even under a
+/// policy with a CPU fallback.
 class GpuCompilationCache {
   /// Creates a GPU compilation cache setting.
   const GpuCompilationCache({
@@ -116,9 +120,12 @@ class GpuCompilationCache {
 
   /// Identifies the model in the cache. Change it whenever the model changes,
   /// for example by including a model version or content hash.
+  ///
+  /// LiteRT names the cache file after it, so it must not contain `/` or `\`.
   final String key;
 
-  /// Whether compiled programs are serialized to [directory].
+  /// Whether compiled programs are serialized to [directory]. When false,
+  /// nothing is written to or read from [directory]; it is still created.
   final bool programCache;
 
   @override
@@ -171,6 +178,10 @@ class CompiledModelConfig {
 
   /// Optional on-disk GPU kernel cache. Ignored when the policy does not use
   /// the GPU (cpu, npu, npuWithCpuFallback) and on the web.
+  ///
+  /// The [CompiledModelConfig.cpu], [CompiledModelConfig.npu] and
+  /// [CompiledModelConfig.npuWithCpuFallback] constructors leave it null,
+  /// while the unnamed constructor and [copyWith] keep it for any policy.
   final GpuCompilationCache? gpuCache;
 
   /// Creates a policy-based CompiledModel configuration.
@@ -259,6 +270,10 @@ class CompiledModelConfig {
       allowsCpuFallback ? const {Accelerator.cpu} : null;
 
   /// Returns a copy with the supplied fields replaced.
+  ///
+  /// A new [policy] does not clear [gpuCache]: a policy without the GPU
+  /// ignores it, and switching back to a GPU policy uses it again. Pass
+  /// [clearGpuCache] to drop it.
   CompiledModelConfig copyWith({
     CompiledModelPolicy? policy,
     Precision? precision,

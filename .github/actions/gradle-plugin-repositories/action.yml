@@ -1,36 +1,104 @@
-name: Resolve Gradle plugins from Maven Central directly
+name: Cache Gradle's downloads and resolve them from Google's copy of Maven Central
 description: >-
-  Flutter's own Gradle build resolves its plugins from the plugin portal only,
-  which sends Kotlin's artifacts on to Maven Central by redirect; runs failed
-  when that redirect answered 429 or served nothing (2026-11-12). An init
-  script makes every Gradle build on the runner resolve plugins from Google's
-  Maven and Maven Central first. Plugins that only the portal has, such as
-  kotlin-dsl, still come from the portal, so Gradle also retries a failed
-  download longer than its default, and the Gradle distributions, NDK and
+  The Android jobs shared one Gradle cache entry, which build-android-agp9,
+  the fastest, saved first with only what its AGP 9.2.1 plugin build needs,
+  and which no job could update after, so every other job downloaded 186 to
+  315 files, 366 to 804 MB, again on every run. With about 40 Android jobs
+  in an hour, Maven Central answered "too many requests" and the plugin
+  portal failed, and Gradle gave up after 3 tries within a few seconds
+  (2026-11-27). The dependencies are now cached for each app the jobs
+  build, Gradle gets them from Google's copy of Maven Central and retries a
+  failed download for about 4 minutes, and the Gradle distributions, NDK and
   CMake the builds use are downloaded with retries before Gradle needs them.
+inputs:
+  downloads:
+    description: >-
+      The cache entry the job uses, named for what it builds: example for
+      example/android, play-services-test-host for
+      example/play_services_test_host/android, agp9 for the plugin with
+      AGP 9. Jobs that build the same app need the same dependencies.
+    required: true
+  save:
+    description: >-
+      'true' in the one job of flutter-ci.yml that saves the entry: the job
+      whose builds need every dependency the entry's other jobs need. It
+      saves only on a push to main; every other run only restores.
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
-    - name: Resolve Gradle plugins from Maven Central directly
+    # Only what Gradle downloaded and its records of where it came from.
+    # Never the build outputs, transforms or build cache, so a cached build
+    # cannot hide a real break. The key changes with every Gradle file and
+    # with flutter-ci.yml, which pins the Flutter version and the AGP 9 job's
+    # versions. A run whose key is new starts from the entry's latest version
+    # and downloads only what changed. On a miss Gradle downloads everything,
+    # as it did before. Only a push to main saves, in the job that passes
+    # save; pull requests, manual runs, other branches and the other jobs only
+    # restore, so they cannot change what main restores, and the three
+    # entries, about 2.5 GB, stay within the repository's 10 GB of cache next
+    # to the Flutter SDKs.
+    - if: inputs.save != 'true' || github.event_name != 'push' || github.ref != 'refs/heads/main'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: |
+          ~/.gradle/caches/modules-2/files-2.1
+          ~/.gradle/caches/modules-2/metadata-*
+        key: gradle-downloads-${{ runner.os }}.${{ inputs.downloads }}.${{ hashFiles('**/*.gradle.kts', '**/gradle.properties', '**/gradle-wrapper.properties', '.github/workflows/flutter-ci.yml') }}
+        restore-keys: gradle-downloads-${{ runner.os }}.${{ inputs.downloads }}.
+    # Saved at the end of the job if it passed and its key was not restored.
+    - if: inputs.save == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: |
+          ~/.gradle/caches/modules-2/files-2.1
+          ~/.gradle/caches/modules-2/metadata-*
+        key: gradle-downloads-${{ runner.os }}.${{ inputs.downloads }}.${{ hashFiles('**/*.gradle.kts', '**/gradle.properties', '**/gradle-wrapper.properties', '.github/workflows/flutter-ci.yml') }}
+        restore-keys: gradle-downloads-${{ runner.os }}.${{ inputs.downloads }}.
+    # Wherever a build names Maven Central, for plugins, settings, projects or
+    # build scripts, Google's copy takes its place, as in google/flutter-mediapipe,
+    # where Maven Central failed whole jobs on 8 of 50 runners and the copy
+    # answered on all 50 (2026-11-19). The copy gets a release about a day
+    # after Maven Central. Plugins come from Google's Maven, the copy and then
+    # the portal, which serves kotlin-dsl and sends what the copy has not got
+    # yet on to Maven Central.
+    - name: Resolve Gradle downloads from Google's copy of Maven Central
       shell: bash
       run: |
         mkdir -p ~/.gradle/init.d
         cat > ~/.gradle/init.d/plugin-repositories.init.gradle.kts <<'SCRIPT'
+        fun RepositoryHandler.useCopy() {
+            withType<MavenArtifactRepository>().whenObjectAdded {
+                if (url.toString() == "https://repo.maven.apache.org/maven2/") {
+                    url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
+                }
+            }
+        }
         beforeSettings {
+            buildscript.repositories.useCopy()
+            dependencyResolutionManagement.repositories.useCopy()
             pluginManagement.repositories {
+                useCopy()
                 google()
                 mavenCentral()
                 gradlePluginPortal()
             }
         }
+        allprojects {
+            buildscript.repositories.useCopy()
+            repositories.useCopy()
+        }
         SCRIPT
-    # Gradle tries a failed download 3 times with 125 ms between the first
-    # two, so a portal hiccup of a few seconds fails the build: a run on
-    # 2026-11-13 failed on "Plugin [id: 'org.gradle.kotlin.kotlin-dsl',
-    # version: '6.5.7'] was not found", a plugin only the portal serves.
-    # These are the values open-telemetry/opentelemetry-java sets for the same
-    # Maven Central flakiness. They apply to every Gradle build on the runner,
-    # Flutter's own included build too.
+    # Gradle tries a download that failed on the network or with a 5xx, 408 or
+    # 429 3 times within a few seconds, and then gives up on that repository
+    # for the rest of the build. These make it 10 times, from 0.5 s apart, about
+    # 4 minutes in all. Gradle reads org.gradle.internal.repository.max.tentatives;
+    # the max.retries this action set before is read by nothing, so the build
+    # that failed on kotlin-dsl had 3 tries, not 10. They apply to every Gradle
+    # build on the runner, Flutter's own included build too. A "not found"
+    # (404) is never tried again; the Android builds handle that with
+    # scripts/gradle_not_found.sh.
     - name: Retry Gradle downloads longer
       shell: bash
       run: |
@@ -38,7 +106,7 @@ runs:
         cat >> ~/.gradle/gradle.properties <<'PROPS'
         systemProp.org.gradle.internal.http.connectionTimeout=120000
         systemProp.org.gradle.internal.http.socketTimeout=120000
-        systemProp.org.gradle.internal.repository.max.retries=10
+        systemProp.org.gradle.internal.repository.max.tentatives=10
         systemProp.org.gradle.internal.repository.initial.backoff=500
         PROPS
     # Flutter's gradlew downloads the Gradle distribution once, with no retry;

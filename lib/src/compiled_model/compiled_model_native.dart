@@ -426,13 +426,11 @@ class CompiledModel {
     compile,
   }) {
     final primary = config.primaryAccelerators;
-    if (primary.contains(Accelerator.gpu)) {
+    final gpuCache = config.gpuCache;
+    if (gpuCache != null && primary.contains(Accelerator.gpu)) {
       // Invalid cache settings are a caller bug, not a GPU failure: throw
       // before the CPU fallback could hide them.
-      buildGpuOptionsPayload(
-        precision: config.precision,
-        cache: config.gpuCache,
-      );
+      prepareGpuCompilationCache(gpuCache);
     }
     try {
       return compile(primary, false);
@@ -1313,9 +1311,13 @@ Pointer<Void> _createOptions(LiteRtBindings rt, int acceleratorMask) {
 /// option needs to be sent (fp16 with no cache).
 ///
 /// LiteRT only accepts GPU settings as this text (its GPU option setters are
-/// not exported from the bundled libraries). It strips surrounding quotes but
-/// does not unescape, so quotes and newlines in [cache] values would corrupt
-/// the payload: those throw [ArgumentError]. Exposed for unit tests.
+/// not exported from the bundled libraries). It strips one pair of
+/// surrounding quotes and does not unescape, so a line break in a [cache]
+/// value would split the payload line and a double quote would need an
+/// escape LiteRT does not handle: those throw [ArgumentError]. A single quote
+/// is kept as is. A path separator in the key throws [ArgumentError] too:
+/// LiteRT names the cache file after the key inside the directory, so it
+/// would point at a subfolder that does not exist. Exposed for unit tests.
 String? buildGpuOptionsPayload({
   required Precision precision,
   GpuCompilationCache? cache,
@@ -1326,7 +1328,7 @@ String? buildGpuOptionsPayload({
   }
   if (cache != null) {
     _checkGpuCacheValue('GpuCompilationCache.directory', cache.directory);
-    _checkGpuCacheValue('GpuCompilationCache.key', cache.key);
+    _checkGpuCacheKey(cache.key);
     lines
       ..add('serialization_dir = "${cache.directory}"')
       ..add('model_cache_key = "${cache.key}"')
@@ -1336,15 +1338,47 @@ String? buildGpuOptionsPayload({
   return '${lines.join('\n')}\n';
 }
 
+/// Checks [cache] and creates its directory before the first compile attempt.
+///
+/// Throws [ArgumentError] for a relative or otherwise invalid setting and
+/// [FileSystemException] when the directory cannot be created. Run inside the
+/// GPU attempt, either would be caught and retried on CPU, so a bad cache
+/// folder would go unnoticed. An existing directory is left as it is. Exposed
+/// for unit tests.
+void prepareGpuCompilationCache(GpuCompilationCache cache) {
+  _checkGpuCacheValue('GpuCompilationCache.directory', cache.directory);
+  _checkGpuCacheKey(cache.key);
+  final directory = Directory(cache.directory);
+  if (!directory.isAbsolute) {
+    throw ArgumentError.value(
+      cache.directory,
+      'GpuCompilationCache.directory',
+      'must be an absolute path',
+    );
+  }
+  directory.createSync(recursive: true);
+}
+
 void _checkGpuCacheValue(String name, String value) {
   if (value.isEmpty) {
     throw ArgumentError.value(value, name, 'must not be empty');
   }
-  if (RegExp('["\'\r\n]').hasMatch(value)) {
+  if (RegExp('["\r\n]').hasMatch(value)) {
     throw ArgumentError.value(
       value,
       name,
-      'must not contain quotes or newlines',
+      'must not contain double quotes or line breaks',
+    );
+  }
+}
+
+void _checkGpuCacheKey(String key) {
+  _checkGpuCacheValue('GpuCompilationCache.key', key);
+  if (RegExp(r'[/\\]').hasMatch(key)) {
+    throw ArgumentError.value(
+      key,
+      'GpuCompilationCache.key',
+      'must not contain path separators (/ or \\)',
     );
   }
 }
@@ -1357,9 +1391,6 @@ Pointer<Utf8>? _addGpuOptions(
 }) {
   final text = buildGpuOptionsPayload(precision: precision, cache: cache);
   if (text == null) return null;
-  if (cache != null) {
-    Directory(cache.directory).createSync(recursive: true);
-  }
   final identifier = 'gpu_options'.toNativeUtf8();
   final payload = text.toNativeUtf8();
   final opaqueOut = calloc<Pointer<Void>>();

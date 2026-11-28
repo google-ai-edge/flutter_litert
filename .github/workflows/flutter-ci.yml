@@ -1,15 +1,34 @@
 name: build
+# A change made only of these files starts no run: no build or test reads
+# them. LICENSE is not among them, because the podspecs name it and Flutter
+# copies every package's LICENSE into the app it builds.
 on:
   workflow_dispatch:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'AUTHORS'
   push:
     branches:
       - main
       - compiled-model
       - fix/wasm-ready-3.2.0
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+      - 'AUTHORS'
 
 permissions:
   contents: read
+
+# A new push to a pull request cancels the run still going for its previous
+# commit, whose result no longer matters. Every other run (pushes to main, a
+# manual dispatch) gets a group of its own, so it is never cancelled or held
+# back by another one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # One Flutter version for every job, so a new stable release cannot change CI
 # between two runs of the same commit: Flutter 3.50.0 (2026-11-11) needed
@@ -20,6 +39,49 @@ env:
   FLUTTER_VERSION: '3.50.0'
 
 jobs:
+  # On a pull request, two narrow lanes run only when the PR touches what they
+  # build: build-android-agp9 builds just the plugin's Android module, and
+  # build-windows-flex just the Flex host on Windows, whose Dart side the Linux
+  # and macOS Flex tests cover on every run. Pushes and manual runs skip this
+  # job, and both lanes always run then. Should this job fail, both run too.
+  #
+  # The PR's merge commit has the base branch head as its first parent, so the
+  # diff between the two is what the PR changes. Diffing names needs commits
+  # and trees only, so the checkout fetches no other file contents.
+  changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      agp9: ${{ steps.diff.outputs.agp9 }}
+      windows_flex: ${{ steps.diff.outputs.windows_flex }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .github
+      - name: List the files the pull request changes
+        id: diff
+        run: |
+          git diff --name-only HEAD^1 HEAD | tee "$RUNNER_TEMP/changed.txt"
+          changed() {
+            if grep -qE "$1" "$RUNNER_TEMP/changed.txt"; then echo true; else echo false; fi
+          }
+          workflow='^\.github/workflows/flutter-ci\.yml$'
+          # The plugin module, the native sources its CMake build compiles,
+          # the example's Gradle project, every pubspec, and the scripts
+          # and shared actions the lane runs.
+          agp9=$(changed "$workflow|^android/|^src/|^example/android/|(^|/)pubspec\.yaml$|^\.github/actions/(gradle-plugin-repositories|flutter)/|^scripts/(gradle_distribution|android_sdk_packages|gradle_not_found)\.sh$")
+          # The Flex host and its pins, the plugin's Windows build and the
+          # native sources it compiles, the root pubspec the host depends on,
+          # the Dart code that loads the Flex DLL, and the Flutter setup action.
+          windows_flex=$(changed "$workflow|^example/flex_test_host/|^windows/|^src/|^pubspec\.yaml$|^lib/src/delegates/flex_delegate|^\.github/actions/flutter/")
+          echo "agp9=$agp9" >> "$GITHUB_OUTPUT"
+          echo "windows_flex=$windows_flex" >> "$GITHUB_OUTPUT"
+          echo "build-android-agp9: $agp9, build-windows-flex: $windows_flex"
+
   build-macos:
     # macos-latest is macos-26 today and moves when GitHub retargets the
     # label; a named image changes only when this line does.
@@ -30,11 +92,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
@@ -42,19 +102,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Repo-wide analyze below needs example_web's package config resolved;
-      # a fresh checkout has no .dart_tool there and analyze would fail on
-      # its unresolved package: imports.
-      - name: Install web example dependencies
-        working-directory: example_web
-        run: flutter pub get
-
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
-
-      - name: Analyze project source
-        run: flutter analyze .
-
+      # Formatting and analysis run in build-linux only: both read the same
+      # Dart sources on any host and report the same result.
       - name: Run tests
         run: flutter test
 
@@ -77,6 +126,39 @@ jobs:
         working-directory: example/flex_test_host
         run: flutter test -d macos integration_test
 
+      - name: Install example app dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: Read Xcode build version
+        id: xcode
+        run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+
+      # The example app depends on opencv_dart, whose dartcv4 build hook
+      # downloads OpenCV and compiles dartcv4's C++ wrappers with CMake: about
+      # 8 of the 10 minutes the first example build takes. Flutter's hooks
+      # runner keeps that output in .dart_tool/hooks_runner and reruns the hook
+      # when its input (target, compiler paths, user defines), the files it
+      # read or its environment differ from what it recorded, so a restored
+      # entry is only reused where the hook would build the same thing. Here
+      # the PATH Xcode hands the hook holds a Metal toolchain mount that
+      # differs between runners, so the hook usually reruns, but inside the
+      # restored CMake tree, which saves the download and part of the build.
+      # The key follows the resolved package versions, Flutter and Xcode. Only
+      # dependency hooks run here; flutter_litert has none, so the plugin's
+      # own native code is never restored.
+      #
+      # Every run restores the entry, but only a push to main saves one, after
+      # the first example build below: an entry is about 210 MB, the
+      # repository's Actions cache holds 10 GB, and an entry saved by a pull
+      # request run is only visible to that pull request's later runs.
+      - name: Restore example build hook output (macOS)
+        id: hooks-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: example-hooks-macos-${{ runner.arch }}-xcode-${{ steps.xcode.outputs.build }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('example/pubspec.yaml', 'example/pubspec.lock') }}
+
       # Builds the example app and runs real CompiledModel inference inside it,
       # proving the production load path end to end: the podspec ships
       # libLiteRt.dylib as a resource and the loader resolves it from inside
@@ -88,6 +170,21 @@ jobs:
       - name: Run CompiledModel integration tests (macOS desktop)
         working-directory: example
         run: flutter test integration_test/compiled_model_test.dart -d macos --timeout 600s
+
+      # Saved on a push to main when nothing was restored, as explained at the
+      # restore step above.
+      - name: Save example build hook output (macOS)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.hooks-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: ${{ steps.hooks-cache.outputs.cache-primary-key }}
+
+      # GpuCompilationCache on the real Metal accelerator: the cache files it
+      # writes per key, their reuse, and outputs equal to an uncached load.
+      - name: Run GPU compilation cache integration tests (macOS desktop)
+        working-directory: example
+        run: flutter test integration_test/macos_gpu_cache_test.dart -d macos --timeout 600s
 
       - name: Run Interpreter/CompiledModel coexistence tests (macOS desktop)
         working-directory: example
@@ -126,11 +223,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       # Without the Microsoft apt sources, with retries and time limits, and
       # from another Ubuntu mirror when the runner's own one fails or stalls.
@@ -145,7 +240,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Same as build-macos: resolve example_web before the repo-wide analyze.
+      # Repo-wide analyze below needs example_web's package config resolved;
+      # a fresh checkout has no .dart_tool there and analyze would fail on
+      # its unresolved package: imports.
       - name: Install web example dependencies
         working-directory: example_web
         run: flutter pub get
@@ -187,6 +284,10 @@ jobs:
         working-directory: example/flex_test_host
         run: xvfb-run -a flutter test -d linux integration_test
 
+      - name: Run Flex host widget test
+        working-directory: example/flex_test_host
+        run: flutter test test/widget_test.dart
+
       # Builds the example app and runs real CompiledModel inference inside
       # it, proving the production load path end to end: CMake bundles
       # linux/lib/libLiteRt.so into the app bundle and the loader resolves it
@@ -204,6 +305,16 @@ jobs:
         working-directory: example
         run: xvfb-run -a flutter test integration_test/interpreter_coexistence_test.dart -d linux --timeout 600s
 
+      # The tools the Test Lab model matrix runs with (the model manifest and
+      # the shard report merger). They are pure Dart, but flutter test first
+      # builds the example's native dependencies for the test runner, about
+      # 4 minutes of dartcv4's build hook that the desktop builds above do not
+      # share. build-linux ends well before build-macos, so the step costs
+      # runner minutes and no wall time.
+      - name: Run example tool tests
+        working-directory: example
+        run: flutter test test
+
   build-windows:
     runs-on: windows-2022
     # Takes 11 minutes, 13 at most in 77 runs.
@@ -212,11 +323,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -266,17 +375,18 @@ jobs:
   # does not have to provide: windows/CMakeLists.txt bundles it next to the
   # executable.
   build-windows-flex:
+    needs: changes
+    # Runs on every push; on a pull request, when the changes job says so.
+    if: ${{ !cancelled() && needs.changes.outputs.windows_flex != 'false' }}
     runs-on: windows-2022
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install Flex integration host dependencies
         working-directory: example/flex_test_host
@@ -345,11 +455,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -448,7 +556,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # A fresh runner has no debug keystore. With AGP 9.3.3 the first debug
       # build creates ~/.android/debug.keystore and later builds create and use
       # ~/.config/.android/debug.keystore, so APKs from one job are signed with
@@ -462,15 +569,17 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle downloads come from the cache where it can, and plugins from
-      # Maven Central directly instead of through the plugin portal's redirect,
-      # which answered 429 or served nothing in two runs on 2026-11-12.
+      # Gradle's downloads come from a cache entry for the app this job
+      # builds, which this job saves on a push to main, and otherwise from
+      # Google's copy of Maven Central, not Maven Central, which turned Android
+      # jobs away with 429 (2026-11-27). The action explains both.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: 'stable'
+          downloads: example
+          save: 'true'
+      - uses: ./.github/actions/flutter
+        with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -497,11 +606,15 @@ jobs:
       #
       # scripts/android_flutter_test.sh runs each suite: it ends a launch that
       # installs the app and then starts no test, and builds again only when
-      # Gradle's NDK download breaks off. Neither a launch nor a test is tried
-      # again, so a flaky test shows up red here instead of hiding behind a
-      # retry.
+      # Gradle's NDK download breaks off. A launch that started no test is
+      # tried once more, with a warning: on main (45914302334) the app was
+      # installed and the Dart VM came up, but flutter never attached. A test
+      # is not tried again, so a flaky test shows up red here instead of
+      # hiding behind a retry.
       - name: Run integration tests (Android emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        env:
+          ANDROID_TEST_LAUNCH_ATTEMPTS: 2
         with:
           api-level: 34
           arch: x86_64
@@ -521,10 +634,10 @@ jobs:
             bash ../scripts/android_flutter_test.sh integration_test/compiled_model_test.dart --timeout 600s
             bash ../scripts/android_flutter_test.sh integration_test/interpreter_coexistence_test.dart --timeout 600s
 
-      # Kept when the job did not pass: the device log shows what the emulator
-      # did while flutter test was silent.
+      # Kept when the job did not pass or a launch had to be tried again: the
+      # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
-        if: failure() || cancelled()
+        if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
@@ -544,8 +657,17 @@ jobs:
   # gradle.properties and holds the Play services tests, apart from the main
   # example and its bundled-runtime suites. This job builds the host's debug
   # and release (R8) APKs and checks that they package the Play services
-  # runtime only. Its emulator test failed its first attempt in 23 of 43
-  # runs, so it is out of this workflow and lives in device-tests-manual.yml.
+  # runtime only. The Play services emulator test failed its first attempt in
+  # 23 of 43 runs, so it is out of this workflow and lives in
+  # device-tests-manual.yml.
+  #
+  # The same host then runs on an emulator image without Google Play
+  # services: initializeAndroidRuntime() must fail promptly with both reasons
+  # instead of hanging, and models must keep reporting the failure. Rebuilt
+  # with flutterLitert.runtime=auto, it must fall back to the bundled runtime,
+  # in the integration test and in the release smoke APK. Until 2026-11 that
+  # half was a job of its own, build-android-no-play-services; one job sets
+  # up the runner and resolves the host once for both.
   build-android-play-services:
     runs-on: ubuntu-24.04
     # A stall must end the job in an hour, not at the 6 hour limit.
@@ -565,7 +687,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android.
       - name: Use one debug keystore for every build
         run: |
@@ -574,13 +695,17 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android. This job saves the test host's entry on a push to main:
+      # its builds, with and without flutterLitert.runtime=auto, need
+      # everything the host's emulator jobs in device-tests-manual.yml need.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: 'stable'
+          downloads: play-services-test-host
+          save: 'true'
+      - uses: ./.github/actions/flutter
+        with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install host dependencies
         working-directory: example/play_services_test_host
@@ -594,8 +719,10 @@ jobs:
       # or AGP update want another one, this first Gradle build downloads it,
       # and that download can break off and leave a corrupted archive ("Error
       # on ZipFile unknown archive"), which fails assembleDebug. Only in that
-      # case the partial NDK is purged and the build runs again, up to three
-      # attempts; any other build failure fails the step at once.
+      # case the partial NDK is purged and the build runs again, and when a
+      # repository answered "not found" for Kotlin or kotlin-dsl,
+      # scripts/gradle_not_found.sh makes Gradle ask again; up to three
+      # attempts, and any other build failure fails the step at once.
       - name: Build the Play services host APK
         working-directory: example/play_services_test_host
         run: |
@@ -603,9 +730,12 @@ jobs:
             flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/host-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/host-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 
@@ -626,44 +756,6 @@ jobs:
           python3 -I scripts/check_android_runtime_apk.py --runtime playServices
           example/play_services_test_host/build/app/outputs/flutter-apk/app-release.apk
 
-  # The same host on an emulator image without Google Play services:
-  # initializeAndroidRuntime() must fail promptly with both reasons instead of
-  # hanging, and models must keep reporting the failure. Rebuilt with
-  # flutterLitert.runtime=auto, it must fall back to the bundled runtime, in
-  # the integration test and in the release smoke APK.
-  build-android-no-play-services:
-    runs-on: ubuntu-24.04
-    # Takes 7 minutes, 9 at most in 39 runs.
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: gradle
-      # One debug keystore for every build, explained at build-android.
-      - name: Use one debug keystore for every build
-        run: |
-          mkdir -p ~/.android ~/.config/.android
-          [ -f ~/.android/debug.keystore ] || keytool -genkeypair -keystore ~/.android/debug.keystore \
-            -storepass android -keypass android -alias androiddebugkey \
-            -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
-          cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android.
-      - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          channel: 'stable'
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Install host dependencies
-        working-directory: example/play_services_test_host
-        run: flutter pub get
-
       - name: Enable KVM for hardware-accelerated emulation
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -675,9 +767,13 @@ jobs:
       - name: Download the emulator and its system image
         run: bash scripts/android_sdk_packages.sh emulator 'system-images;android-34;default;x86_64'
 
-      # No launch or test is tried again, as in build-android.
+      # A launch is tried once more and a test is not, as in build-android.
+      # The auto runtime release build below overwrites the Play services
+      # release APK checked above.
       - name: Run the no Play services integration test (Android emulator)
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        env:
+          ANDROID_TEST_LAUNCH_ATTEMPTS: 2
         with:
           api-level: 34
           target: default
@@ -695,10 +791,10 @@ jobs:
             python3 -I ../../scripts/check_android_runtime_apk.py --runtime auto build/app/outputs/flutter-apk/app-release.apk
             bash ../../scripts/android_release_smoke.sh build/app/outputs/flutter-apk/app-release.apk emulator-5554 600
 
-      # Kept when the job did not pass: the device log shows what the emulator
-      # did while flutter test was silent.
+      # Kept when the job did not pass or a launch had to be tried again: the
+      # device log shows what the emulator did while flutter test was silent.
       - name: Upload Android test logs
-        if: failure() || cancelled()
+        if: failure() || cancelled() || hashFiles('build/android-test-logs/retried') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: android-test-logs-${{ github.job }}
@@ -715,6 +811,9 @@ jobs:
   # still merge into the AAR (the CMake custom-ops lib plus the downloaded
   # LiteRT Next runtime and GPU accelerator).
   build-android-agp9:
+    needs: changes
+    # Runs on every push; on a pull request, when the changes job says so.
+    if: ${{ !cancelled() && needs.changes.outputs.agp9 != 'false' }}
     runs-on: ubuntu-24.04
     # Takes 4 minutes, 7 at most in 86 runs.
     timeout-minutes: 20
@@ -726,14 +825,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
-      # Gradle plugins from Maven Central directly, explained at build-android.
+      # Gradle downloads cached and from Google's copy, explained at build-android.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: 'stable'
+          downloads: agp9
+          save: 'true'
+      - uses: ./.github/actions/flutter
+        with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -762,8 +861,9 @@ jobs:
       # can break off and leave a corrupted archive (on 2026-11-12 it took 9
       # minutes and ended in "Archive is not a ZIP archive"), which fails the
       # build. Only in that case the partial NDK is purged and the build runs
-      # again, up to three attempts; any other build failure fails the step
-      # at once.
+      # again, and when a repository answered "not found" for Kotlin or
+      # kotlin-dsl, scripts/gradle_not_found.sh makes Gradle ask again; up to
+      # three attempts, and any other build failure fails the step at once.
       - name: Assemble plugin AAR under AGP 9 (regression guard for issue #14)
         working-directory: example/android
         run: |
@@ -771,9 +871,12 @@ jobs:
             ./gradlew :flutter_litert:assembleRelease --stacktrace 2>&1 | tee "$RUNNER_TEMP/agp9-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/agp9-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/agp9-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/agp9-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 
@@ -809,11 +912,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Select Xcode 16.4
         run: |
@@ -840,6 +941,24 @@ jobs:
           ./scripts/use_local_coreml_xcframework.sh \
             "$GITHUB_WORKSPACE/ios/TensorFlowLiteCCoreML.xcframework"
 
+      - name: Install example app dependencies
+        working-directory: example
+        run: flutter pub get
+
+      - name: Read Xcode build version
+        id: xcode
+        run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+
+      # The dartcv4 build hook output for the simulator, cached as in
+      # build-macos: it is about 6 of the 8 minutes the build below takes.
+      # Restored on every run and saved only by a push to main, as there.
+      - name: Restore example build hook output (iOS simulator)
+        id: hooks-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: example-hooks-ios-simulator-${{ runner.arch }}-xcode-${{ steps.xcode.outputs.build }}-flutter-${{ env.FLUTTER_VERSION }}-${{ hashFiles('example/pubspec.yaml', 'example/pubspec.lock') }}
+
       # Compiles the example app for the simulator against the staged
       # framework, as the simulator integration tests did before they ran.
       # Those tests timed out or failed to launch on their first attempt in 9
@@ -848,3 +967,12 @@ jobs:
       - name: Build the example app for the iOS simulator
         working-directory: example
         run: flutter build ios --simulator --debug
+
+      # Saved on a push to main when nothing was restored, as explained at
+      # build-macos's restore step.
+      - name: Save example build hook output (iOS simulator)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.hooks-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: example/.dart_tool/hooks_runner
+          key: ${{ steps.hooks-cache.outputs.cache-primary-key }}

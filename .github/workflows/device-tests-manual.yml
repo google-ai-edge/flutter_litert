@@ -26,7 +26,7 @@ name: device tests (manual)
 # The Android jobs set ANDROID_TEST_LAUNCH_ATTEMPTS to 3, which
 # scripts/android_flutter_test.sh used by default before: a launch that
 # installs the app and starts no test, or a device flutter did not find, is
-# tried again up to three times. flutter-ci.yml leaves it at 1.
+# tried again up to three times. flutter-ci.yml sets it to 2.
 #
 # Emulator start retry: the emulator action boots the emulator, sends one
 # screen unlock key with no retry and only then runs `script`. On the Play
@@ -68,7 +68,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android in
       # flutter-ci.yml.
       - name: Use one debug keystore for every build
@@ -78,14 +77,14 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android
-      # in flutter-ci.yml.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android in flutter-ci.yml, which saves the entry this job reads.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: 'stable'
+          downloads: example
+      - uses: ./.github/actions/flutter
+        with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -101,7 +100,11 @@ jobs:
       - name: Download the emulator and its system image
         run: bash scripts/android_sdk_packages.sh 'platforms;android-24' emulator 'system-images;android-24;google_apis;x86_64'
 
-      # The same suites as build-android in flutter-ci.yml, run the same way.
+      # The same suites as build-android in flutter-ci.yml, run the same way,
+      # plus android_gpu_cache_test. Emulators have no working OpenCL, so that
+      # one runs with FLUTTER_LITERT_EXPECT_GPU=false: only its checks that a
+      # bad GpuCompilationCache throws instead of falling back to CPU run here.
+      # Its GPU half needs a physical phone.
       # No ram-size here, unlike the other emulator jobs: with 4096M this image never finished
       # booting (9 of 9 jobs), with the AVD's own 1536M it did (8 of 8).
       #
@@ -109,10 +112,17 @@ jobs:
       # stopped for good in 12 of 54 jobs, after adb had sent the whole APK;
       # on one core it did in none of 15, and the job takes as long.
       #
-      # The emulator start retry is explained at the top of this file.
+      # The emulator start retry is explained at the top of this file. On this
+      # image an adb call of the action itself (`adb shell input keyevent 82`,
+      # or one `adb shell getprop sys.boot_completed` of its boot poll) never
+      # returned in 2 of 10 jobs (45914213511), and the action puts no limit
+      # on either, so the step ran until the job's own limit and the retry
+      # never came. The step takes 6 to 9 minutes; its own limit fails it
+      # sooner, and with no test started yet the retry then runs.
       - name: Run integration tests (Android 7.0 emulator)
         id: emulator
         continue-on-error: true
+        timeout-minutes: 18
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: &api24-emulator-with
           api-level: 24
@@ -127,6 +137,7 @@ jobs:
             touch "$RUNNER_TEMP/emulator-script-started"
             bash ../scripts/android_flutter_test.sh integration_test/compiled_model_test.dart --timeout 600s
             bash ../scripts/android_flutter_test.sh integration_test/interpreter_coexistence_test.dart --timeout 600s
+            bash ../scripts/android_flutter_test.sh integration_test/android_gpu_cache_test.dart --dart-define=FLUTTER_LITERT_EXPECT_GPU=false --timeout 600s
       - name: Check whether the emulator failed before the tests started
         id: emulator_start
         if: steps.emulator.outcome == 'failure'
@@ -137,9 +148,18 @@ jobs:
             echo "::warning title=Emulator start retried::the Android emulator step failed before the tests started (android-api24-emulator), starting the emulator once more"
             echo "retry=true" >> "$GITHUB_OUTPUT"
           fi
+      # A step that reached its limit leaves its emulator and adb server
+      # running, and the second start would find the old emulator-5554.
+      - name: Stop the first emulator and the adb server
+        if: steps.emulator_start.outputs.retry == 'true'
+        run: |
+          pkill -9 -f qemu-system || true
+          timeout -k 5 30 "$ANDROID_HOME/platform-tools/adb" kill-server || true
+          pkill -9 -x adb || true
       - name: Run integration tests (Android 7.0 emulator), second emulator start
         id: emulator_retry
         if: steps.emulator_start.outputs.retry == 'true'
+        timeout-minutes: 18
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with: *api24-emulator-with
       - name: Fail the job when the emulator step failed
@@ -189,7 +209,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
       # One debug keystore for every build, explained at build-android in
       # flutter-ci.yml.
       - name: Use one debug keystore for every build
@@ -199,14 +218,15 @@ jobs:
             -storepass android -keypass android -alias androiddebugkey \
             -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 -noprompt
           cp ~/.android/debug.keystore ~/.config/.android/debug.keystore
-      # Gradle plugins from Maven Central directly, explained at build-android
-      # in flutter-ci.yml.
+      # Gradle downloads cached and from Google's copy, explained at
+      # build-android in flutter-ci.yml. build-android-play-services saves the
+      # entry this job reads.
       - uses: ./.github/actions/gradle-plugin-repositories
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: 'stable'
+          downloads: play-services-test-host
+      - uses: ./.github/actions/flutter
+        with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Install host dependencies
         working-directory: example/play_services_test_host
@@ -220,8 +240,10 @@ jobs:
       # or AGP update want another one, this first Gradle build downloads it,
       # and that download can break off and leave a corrupted archive ("Error
       # on ZipFile unknown archive"), which fails assembleDebug. Only in that
-      # case the partial NDK is purged and the build runs again, up to three
-      # attempts; any other build failure fails the step at once.
+      # case the partial NDK is purged and the build runs again, and when a
+      # repository answered "not found" for Kotlin or kotlin-dsl,
+      # scripts/gradle_not_found.sh makes Gradle ask again; up to three
+      # attempts, and any other build failure fails the step at once.
       - name: Build the Play services host APK
         working-directory: example/play_services_test_host
         run: |
@@ -229,9 +251,12 @@ jobs:
             flutter build apk --debug 2>&1 | tee "$RUNNER_TEMP/host-build.log"
             rc=${PIPESTATUS[0]}
             [ "$rc" -eq 0 ] && exit 0
-            grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log" || exit "$rc"
-            echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
-            rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            if grep -q "preparing SDK package NDK" "$RUNNER_TEMP/host-build.log"; then
+              echo "::warning::the NDK download broke off in attempt $attempt (rc=$rc)"
+              rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+            elif ! bash ../../scripts/gradle_not_found.sh "$RUNNER_TEMP/host-build.log"; then
+              exit "$rc"
+            fi
           done
           exit "$rc"
 
@@ -407,11 +432,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: ./.github/actions/flutter
         with:
-          channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
 
       - name: Select Xcode 16.4
         run: |

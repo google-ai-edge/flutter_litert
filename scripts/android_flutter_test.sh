@@ -16,12 +16,15 @@
 #     2 seconds (once in about 95 jobs).
 # Here every attempt has a hard limit, and a watchdog ends an attempt that
 # prints no test line soon after the APK is built. By default nothing is tried
-# again, except a build whose NDK download broke off: a launch failure, a
-# device that was not found and a failed test all fail the script. The push and
-# PR workflow (flutter-ci.yml) runs with these defaults, so a flaky test shows
-# up red instead of passing on a second attempt. ANDROID_TEST_LAUNCH_ATTEMPTS
-# and ANDROID_TEST_ATTEMPTS allow more attempts; only device-tests-manual.yml
-# sets them.
+# again, except a build whose NDK download broke off or that a repository
+# answered "not found" for Kotlin (gradle_not_found.sh): a launch failure, a
+# device that was not found and a failed test all fail the script.
+# ANDROID_TEST_LAUNCH_ATTEMPTS and ANDROID_TEST_ATTEMPTS allow more attempts.
+# The push and PR workflow (flutter-ci.yml) sets ANDROID_TEST_LAUNCH_ATTEMPTS
+# to 2, since a launch where flutter never attached failed main once
+# (45914302334), and leaves ANDROID_TEST_ATTEMPTS at 1, so a flaky test still
+# shows up red instead of passing on a second attempt. device-tests-manual.yml
+# sets both higher. A launch that was tried again prints a warning.
 #
 # Environment:
 #   ANDROID_TEST_SERIAL           device, default emulator-5554
@@ -267,11 +270,16 @@ while :; do
   if ! built "$log"; then
     # Gradle's SDK-component install can receive a corrupted NDK archive
     # ("Error on ZipFile unknown archive"), which fails assembleDebug. Only
-    # then the partial NDK is purged and the build runs again.
+    # then the partial NDK is purged and the build runs again, and when a
+    # repository answered "not found" for Kotlin or kotlin-dsl,
+    # gradle_not_found.sh makes Gradle ask again.
     build_failures=$((build_failures + 1))
     if grep -aq 'preparing SDK package NDK' "$log" && [ "$build_failures" -lt 3 ]; then
       echo "::warning::$name attempt $attempt: the NDK download broke off (rc=$rc), building again"
       rm -rf "$ANDROID_HOME"/ndk/* "$ANDROID_HOME"/.temp
+      continue
+    fi
+    if [ "$build_failures" -lt 3 ] && bash "$(dirname "$0")/gradle_not_found.sh" "$log"; then
       continue
     fi
     echo "::error::$name: the build failed (rc=$rc)"
