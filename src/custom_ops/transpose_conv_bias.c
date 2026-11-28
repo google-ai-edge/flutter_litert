@@ -130,6 +130,31 @@ static inline int max_int(int a, int b) {
     return a > b ? a : b;
 }
 
+// Returns the tensor that `indices` names at `position`, or NULL when the
+// position or the tensor index is out of range. The index comes from the
+// model file, which can hold any value there, including kTfLiteOptionalTensor
+// (-1), so it is checked before `context->tensors` is indexed.
+static TfLiteTensor* GetTensorAt(TfLiteContext* context, const TfLiteIntArray* indices,
+                                 int position) {
+    if (context == NULL || context->tensors == NULL || indices == NULL) return NULL;
+    if (position < 0 || position >= indices->size) return NULL;
+    const int index = indices->data[position];
+    if (index < 0 || (size_t)index >= context->tensors_size) return NULL;
+    return &context->tensors[index];
+}
+
+// Returns 1 when every dimension is positive and the element count fits in an
+// int, which Offset() and the loops in Eval rely on.
+static int HasValidElementCount(const TfLiteIntArray* dims) {
+    int64_t count = 1;
+    for (int i = 0; i < dims->size; ++i) {
+        if (dims->data[i] <= 0) return 0;
+        count *= dims->data[i];
+        if (count > INT32_MAX) return 0;
+    }
+    return 1;
+}
+
 // Parse the custom options to get parameters
 static void* Init(TfLiteContext* context, const char* buffer, size_t length) {
     (void)context;
@@ -157,22 +182,31 @@ static void Free(TfLiteContext* context, void* buffer) {
 
 static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     // Validate number of inputs/outputs
-    if (node->inputs->size != 3) {
+    if (node->inputs == NULL || node->inputs->size != 3) {
         context->ReportError(context, "Convolution2DTransposeBias requires 3 inputs, got %d",
-                           node->inputs->size);
+                           node->inputs ? node->inputs->size : 0);
         return kTfLiteError;
     }
-    if (node->outputs->size != 1) {
+    if (node->outputs == NULL || node->outputs->size != 1) {
         context->ReportError(context, "Convolution2DTransposeBias requires 1 output, got %d",
-                           node->outputs->size);
+                           node->outputs ? node->outputs->size : 0);
         return kTfLiteError;
     }
 
     // Get tensors
-    TfLiteTensor* input = &context->tensors[node->inputs->data[kDataInputTensor]];
-    TfLiteTensor* weights = &context->tensors[node->inputs->data[kWeightsTensor]];
-    TfLiteTensor* bias = &context->tensors[node->inputs->data[kBiasTensor]];
-    TfLiteTensor* output = &context->tensors[node->outputs->data[kOutputTensor]];
+    TfLiteTensor* input = GetTensorAt(context, node->inputs, kDataInputTensor);
+    TfLiteTensor* weights = GetTensorAt(context, node->inputs, kWeightsTensor);
+    TfLiteTensor* bias = GetTensorAt(context, node->inputs, kBiasTensor);
+    TfLiteTensor* output = GetTensorAt(context, node->outputs, kOutputTensor);
+    if (input == NULL || weights == NULL || bias == NULL || output == NULL) {
+        context->ReportError(
+            context, "Convolution2DTransposeBias has a missing or out-of-range tensor index");
+        return kTfLiteError;
+    }
+    if (input->dims == NULL || weights->dims == NULL || bias->dims == NULL) {
+        context->ReportError(context, "Convolution2DTransposeBias inputs must have a shape");
+        return kTfLiteError;
+    }
 
     // Validate dimensions
     if (input->dims->size != 4) {
@@ -187,6 +221,12 @@ static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
         context->ReportError(context, "Bias must be 1D, got %dD", bias->dims->size);
         return kTfLiteError;
     }
+    if (!HasValidElementCount(input->dims) || !HasValidElementCount(weights->dims) ||
+        !HasValidElementCount(bias->dims)) {
+        context->ReportError(
+            context, "Input, weights and bias dimensions must be positive and fit in an int");
+        return kTfLiteError;
+    }
 
     // Validate types - currently only float32
     if (input->type != kTfLiteFloat32) {
@@ -199,6 +239,10 @@ static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     }
     if (bias->type != kTfLiteFloat32) {
         context->ReportError(context, "Bias must be float32");
+        return kTfLiteError;
+    }
+    if (output->type != kTfLiteFloat32) {
+        context->ReportError(context, "Output must be float32");
         return kTfLiteError;
     }
 
@@ -238,8 +282,17 @@ static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
         padding_width = max_int(0, filter_width - (in_width - 1) % stride_width - 1);
     }
 
-    output_height = stride_height * (in_height - 1) + filter_height - padding_height;
-    output_width = stride_width * (in_width - 1) + filter_width - padding_width;
+    const int64_t output_height64 =
+        (int64_t)stride_height * (in_height - 1) + filter_height - padding_height;
+    const int64_t output_width64 =
+        (int64_t)stride_width * (in_width - 1) + filter_width - padding_width;
+    if (output_height64 <= 0 || output_height64 > INT32_MAX ||
+        output_width64 <= 0 || output_width64 > INT32_MAX) {
+        context->ReportError(context, "Output height or width is out of range");
+        return kTfLiteError;
+    }
+    output_height = (int)output_height64;
+    output_width = (int)output_width64;
     // Avoid ResizeTensor ownership/allocation in this custom op path.
     // The model's graph already defines output dims; validate them here.
     if (output->dims == NULL || output->dims->size != 4) {
@@ -259,22 +312,40 @@ static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
             weights->dims->data[0]);
         return kTfLiteError;
     }
+    if (!HasValidElementCount(output->dims)) {
+        context->ReportError(context, "Output element count must fit in an int");
+        return kTfLiteError;
+    }
 
     return kTfLiteOk;
 }
 
 static TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     // Get tensors
-    const TfLiteTensor* input = &context->tensors[node->inputs->data[kDataInputTensor]];
-    const TfLiteTensor* weights = &context->tensors[node->inputs->data[kWeightsTensor]];
-    const TfLiteTensor* bias = &context->tensors[node->inputs->data[kBiasTensor]];
-    TfLiteTensor* output = &context->tensors[node->outputs->data[kOutputTensor]];
+    const TfLiteTensor* input = GetTensorAt(context, node->inputs, kDataInputTensor);
+    const TfLiteTensor* weights = GetTensorAt(context, node->inputs, kWeightsTensor);
+    const TfLiteTensor* bias = GetTensorAt(context, node->inputs, kBiasTensor);
+    TfLiteTensor* output = GetTensorAt(context, node->outputs, kOutputTensor);
+    if (input == NULL || weights == NULL || bias == NULL || output == NULL) {
+        context->ReportError(
+            context, "Convolution2DTransposeBias has a missing or out-of-range tensor index");
+        return kTfLiteError;
+    }
+    if (input->dims == NULL || weights->dims == NULL || output->dims == NULL ||
+        input->dims->size != 4 || weights->dims->size != 4 || output->dims->size != 4) {
+        context->ReportError(context, "Convolution2DTransposeBias tensors must be 4D");
+        return kTfLiteError;
+    }
 
     // Get data pointers
     const float* input_data = input->data.f;
     const float* filter_data = weights->data.f;
     const float* bias_data = bias->data.f;
     float* output_data = output->data.f;
+    if (input_data == NULL || filter_data == NULL || bias_data == NULL || output_data == NULL) {
+        context->ReportError(context, "Convolution2DTransposeBias tensor has no data");
+        return kTfLiteError;
+    }
 
     // Get parameters
     TransposeConvBiasParams* params = (TransposeConvBiasParams*)node->user_data;
